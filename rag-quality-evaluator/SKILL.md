@@ -325,10 +325,11 @@ questions:
     multiSelect: false
     allowFreeformInput: true
     options:
-      - label: "儲存至指定路徑"
-        description: "請在自由輸入欄提供完整路徑，例如：C:\\output\\rag_report.md"
-      - label: "儲存至與評估目標相同的資料夾"
-        description: "自動命名為 rag_evaluation_report_{{TODAY}}.md"
+      - label: "整合成一份報告並儲存"
+        description: "自動命名為 {{分析目標資料夾名稱}}_rag_unify_report_{{TODAY}}.md"
+
+      - label: "建立資料夾並儲存"
+        description: "在評估目標路徑下建立名為 {{分析目標資料夾名稱}}_rag_reports 的資料夾，並儲存報告於其中"
         recommended: true
       - label: "不儲存，僅在對話中查看"
 ```
