@@ -38,11 +38,11 @@ questions:
     allowFreeformInput: true
     options:
       - label: "內容完整性"
-        description: "資訊是否涵蓋主題、無明顯缺漏、有具體細節"
+        description: "資訊是否涵蓋主題、無明顯缺漏"
       - label: "結構清晰度"
         description: "是否有明確邏輯"
-      - label: "資訊正確性"
-        description: "事實是否正確、無錯誤"
+      - label: "資訊細節度"
+        description: "事實是描述清楚、具有具體操作步驟、解決方案等"
       - label: "RAG 可檢索性"
         description: "語句是否獨立、關鍵詞是否豐富"
 
@@ -66,7 +66,6 @@ questions:
     allowFreeformInput: true
     options:
       - label: "含無法解析的掃描圖片（純圖片 PDF）"
-      - label: "檔案加密或受密碼保護"
       - label: "內容完全為亂碼或無意義文字"
       - label: "內容含有敏感資訊（如個資、機密資料）"
         description: "評估過程中若發現此類內容，立即標記為不合格"
