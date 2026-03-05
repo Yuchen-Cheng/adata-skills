@@ -22,12 +22,21 @@ Converts each worksheet in an Excel file into a separate Markdown file. Handles 
 
 ## How to Use
 
+### Workflow
+
+Before running the script, create a dedicated output folder named after the Excel file (without extension) to keep all converted Markdown files organized together. This ensures each Excel file's output is self-contained and easy to locate.
+
+1. Determine the Excel file name (without extension), e.g. `TW-Q2-PUR-001`
+2. Create an output folder with that name in the desired location
+3. Run the conversion script with `--output-dir` pointing to this folder
+
 ### Quick start
 
 Run the bundled script directly — no need to read its source code:
 
 ```bash
-python <skill-path>/scripts/excel_to_markdown.py --excel-file <path-to-xlsx> --output-dir <output-folder>
+mkdir <excel-filename-without-ext>
+python <skill-path>/scripts/excel_to_markdown.py --excel-file <path-to-xlsx> --output-dir <excel-filename-without-ext>
 ```
 
 ### CLI Arguments
@@ -35,19 +44,30 @@ python <skill-path>/scripts/excel_to_markdown.py --excel-file <path-to-xlsx> --o
 | Argument | Required | Description |
 |---|---|---|
 | `--excel-file` | Yes | Path to the Excel file (.xlsx or .xls) |
-| `--output-dir` | No | Directory for output .md files (default: current directory) |
+| `--output-dir` | No | Directory for output .md files (default: current directory). Create a folder named after the Excel file to keep outputs organized. |
 | `--sheet` | No | Specific sheet name or substring to match. If omitted, converts ALL sheets |
 
 ### Examples
 
-Convert all sheets:
+Convert all sheets (output folder named after the Excel file):
 ```bash
-python scripts/excel_to_markdown.py --excel-file "TW-Q2-PUR-001.xlsx" --output-dir ./output
+mkdir TW-Q2-PUR-001
+python scripts/excel_to_markdown.py --excel-file "TW-Q2-PUR-001.xlsx" --output-dir ./TW-Q2-PUR-001
 ```
 
 Convert a specific sheet:
 ```bash
-python scripts/excel_to_markdown.py --excel-file "TW-Q2-PUR-001.xlsx" --sheet "6.3" --output-dir ./output
+mkdir TW-Q2-PUR-001
+python scripts/excel_to_markdown.py --excel-file "TW-Q2-PUR-001.xlsx" --sheet "6.3" --output-dir ./TW-Q2-PUR-001
+```
+
+### Expected Output Structure
+
+```
+TW-Q2-PUR-001/          ← folder named after the Excel file
+├── Sheet1.md
+├── 6.3 採購流程.md
+└── ...                  ← one .md per worksheet
 ```
 
 ### Output Format

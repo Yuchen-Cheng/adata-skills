@@ -37,21 +37,27 @@ def safe_get_text(shape):
         txt = shape.DrawingObject.Text
         if txt:
             return txt
-    except Exception:
+    except (Exception, KeyboardInterrupt, SystemExit):
+        pass
+    except:
         pass
     # Method 2: TextFrame.Characters
     try:
         txt = shape.TextFrame.Characters().Text
         if txt:
             return txt
-    except Exception:
+    except (Exception, KeyboardInterrupt, SystemExit):
+        pass
+    except:
         pass
     # Method 3: TextFrame2
     try:
         tf2 = shape.TextFrame2
         if tf2.HasText:
             return tf2.TextRange.Text
-    except Exception:
+    except (Exception, KeyboardInterrupt, SystemExit):
+        pass
+    except:
         pass
     return ""
 
@@ -115,30 +121,35 @@ def convert_sheet(ws):
     nodes = {}
     idx_by_name = {}
     for i in range(1, shape_count + 1):
-        if i in connector_indices:
-            continue
-        shape = ws.Shapes.Item(i)
-        text = safe_get_text(shape)
-        if not text.strip():
-            continue
-
-        auto_type = -1
         try:
-            auto_type = shape.AutoShapeType
-        except Exception:
-            pass
+            if i in connector_indices:
+                continue
+            shape = ws.Shapes.Item(i)
+            text = safe_get_text(shape)
+            if not text.strip():
+                continue
 
-        nodes[i] = {
-            "id": make_node_id(i),
-            "text": text,
-            "auto_type": auto_type,
-            "top": shape.Top,
-            "left": shape.Left,
-            "width": shape.Width,
-            "height": shape.Height,
-            "name": shape.Name,
-        }
-        idx_by_name.setdefault(shape.Name, []).append(i)
+            auto_type = -1
+            try:
+                auto_type = shape.AutoShapeType
+            except Exception:
+                pass
+
+            nodes[i] = {
+                "id": make_node_id(i),
+                "text": text,
+                "auto_type": auto_type,
+                "top": shape.Top,
+                "left": shape.Left,
+                "width": shape.Width,
+                "height": shape.Height,
+                "name": shape.Name,
+            }
+            idx_by_name.setdefault(shape.Name, []).append(i)
+        except Exception as e:
+            # Skip problematic shapes and continue processing
+            print(f"Warning: Could not process shape {i}: {e}", file=sys.stderr)
+            continue
 
     # ── Phase 3: Extract edges from connectors ──────
     edges = []
