@@ -154,6 +154,7 @@ def convert_sheet(ws):
         begin_idx = None
         end_idx = None
 
+        # Try formal connection first
         try:
             if cf.BeginConnected:
                 bs = cf.BeginConnectedShape
@@ -181,6 +182,71 @@ def convert_sheet(ws):
                                   key=lambda ci: abs(nodes[ci]["top"] - etop) + abs(nodes[ci]["left"] - eleft))
         except Exception:
             pass
+
+        # Proximity fallback for disconnected ends:
+        # Use the connector's bounding box corners to estimate endpoints.
+        # The two candidate points are (left, top) and (left+w, top+h).
+        # For a partially connected connector, the disconnected end is
+        # the corner farther from the connected shape center.
+        if begin_idx is None or end_idx is None:
+            s_top = shape.Top
+            s_left = shape.Left
+            s_w = shape.Width
+            s_h = shape.Height
+            corner_a = (s_left, s_top)
+            corner_b = (s_left + s_w, s_top + s_h)
+
+            # Pre-compute set of label-like node indices to exclude from matching
+            _label_words = {"yes", "no", "y", "n", "是", "否"}
+            _label_indices = {nidx for nidx, ninfo in nodes.items()
+                             if ninfo["text"].strip().lower() in _label_words}
+
+            def _nearest_node(px, py, exclude_idx=None, threshold=60):
+                """Find nearest node to point (px, py) by distance to bounding box.
+                Skips Yes/No label text boxes to avoid false matches."""
+                best, best_dist = None, threshold
+                for nidx, ninfo in nodes.items():
+                    if nidx == exclude_idx or nidx in _label_indices:
+                        continue
+                    n_cx = ninfo["left"] + ninfo.get("width", 50) / 2
+                    n_cy = ninfo["top"] + ninfo.get("height", 30) / 2
+                    n_hw = ninfo.get("width", 50) / 2
+                    n_hh = ninfo.get("height", 30) / 2
+                    dx = max(0, abs(px - n_cx) - n_hw)
+                    dy = max(0, abs(py - n_cy) - n_hh)
+                    dist = (dx**2 + dy**2) ** 0.5
+                    if dist < best_dist:
+                        best_dist = dist
+                        best = nidx
+                return best
+
+            def _node_center(nidx):
+                n = nodes[nidx]
+                return (n["left"] + n.get("width", 50) / 2,
+                        n["top"] + n.get("height", 30) / 2)
+
+            if begin_idx is not None and end_idx is None:
+                # We know begin — the disconnected end is the corner farther from begin
+                bcx, bcy = _node_center(begin_idx)
+                da = abs(corner_a[0] - bcx) + abs(corner_a[1] - bcy)
+                db = abs(corner_b[0] - bcx) + abs(corner_b[1] - bcy)
+                ep = corner_b if db > da else corner_a
+                end_idx = _nearest_node(ep[0], ep[1], exclude_idx=begin_idx)
+
+            elif end_idx is not None and begin_idx is None:
+                # We know end — the disconnected begin is the corner farther from end
+                ecx, ecy = _node_center(end_idx)
+                da = abs(corner_a[0] - ecx) + abs(corner_a[1] - ecy)
+                db = abs(corner_b[0] - ecx) + abs(corner_b[1] - ecy)
+                bp = corner_b if db > da else corner_a
+                begin_idx = _nearest_node(bp[0], bp[1], exclude_idx=end_idx)
+
+            else:
+                # Both disconnected — try both corners
+                na = _nearest_node(corner_a[0], corner_a[1])
+                nb = _nearest_node(corner_b[0], corner_b[1], exclude_idx=na)
+                if na and nb and na != nb:
+                    begin_idx, end_idx = na, nb
 
         if begin_idx and end_idx and begin_idx in nodes and end_idx in nodes:
             label = safe_get_text(shape).strip()
