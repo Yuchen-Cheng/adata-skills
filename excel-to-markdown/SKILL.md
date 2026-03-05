@@ -26,7 +26,7 @@ Converts each worksheet in an Excel file into a separate Markdown file. Handles 
 
 Before running the script, create a dedicated output folder named after the Excel file (without extension) to keep all converted Markdown files organized together. This ensures each Excel file's output is self-contained and easy to locate.
 
-1. Determine the Excel file name (without extension), e.g. `TW-Q2-PUR-001`
+1. Determine the Excel file name (without extension)
 2. Create an output folder with that name in the desired location
 3. Run the conversion script with `--output-dir` pointing to this folder
 
