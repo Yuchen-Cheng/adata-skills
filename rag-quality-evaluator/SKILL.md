@@ -1,6 +1,6 @@
 ---
 name: rag-quality-evaluator
-description: 評估檔案作為 RAG（Retrieval-Augmented Generation）知識來源的品質。根據使用者自訂的評估準則，動態生成一份 100 分制評分表，並對指定的單一檔案或資料夾內所有檔案逐一評分，最終輸出包含「各檔案評估結果」與「統計總表」的 Markdown 評估報告。Use when: 評估 RAG 知識庫品質、評估文件作為知識來源是否合適、審查檔案是否符合 RAG ingestion 標準、rag 品質、知識庫評估、文件品質檢查。Do NOT use for: 評估程式碼邏輯正確性、比較兩份文件內容相似度、執行文件格式轉換、文件摘要生成。
+description: 評估檔案作為 RAG（Retrieval-Augmented Generation）知識來源的品質。根據使用者自訂的評估準則，動態生成一份 100 分制評分表，並對指定的單一檔案或資料夾內所有檔案逐一評分，最終輸出包含「各檔案評估結果」與「統計總表」的 Markdown 評估報告。Use when-> 評估 RAG 知識庫品質、評估文件作為知識來源是否合適、審查檔案是否符合 RAG ingestion 標準、rag 品質、知識庫評估、文件品質檢查。Do NOT use for-> 評估程式碼邏輯正確性、比較兩份文件內容相似度、執行文件格式轉換、文件摘要生成。
 ---
 
 # RAG 品質評估器 操作指南
