@@ -1,322 +1,395 @@
-# Editing ADATA Presentations
+# Editing Presentations
 
-This file covers the **template-based workflow** for building a new ADATA deck from scratch.
-For converting an existing PPTX, see [SKILL.md](SKILL.md) § "Convert an Existing PPTX".
+## Source Conversion Details
+
+> **Use this section when the source is an existing PPTX file.** Read [SKILL.md → Source Conversion Mode](SKILL.md#source-conversion-mode保留內容只改樣式) first for the overview.
+
+### Step-by-step: Applying ADATA Style to a Source PPTX
+
+#### 1. Unpack both files
+
+```bash
+python scripts/office/unpack.py source.pptx source-unpacked/
+python scripts/office/unpack.py adata-template/adata-template.pptx adata-unpacked/
+```
+
+#### 2. Replace the theme
+
+The theme file controls all scheme-based colors. Replacing it makes every element that references a theme color automatically adopt ADATA branding.
+
+```bash
+# Windows (PowerShell)
+Copy-Item adata-unpacked/ppt/theme/theme1.xml source-unpacked/ppt/theme/theme1.xml -Force
+
+# Linux/macOS
+cp adata-unpacked/ppt/theme/theme1.xml source-unpacked/ppt/theme/theme1.xml
+```
+
+> After this step, pack a test copy and open in PowerPoint to see how much changed automatically. Most scheme-colored shapes will already be ADATA colors.
+
+#### 3. Run the conversion script
+
+```bash
+python scripts/convert_to_adata.py source-unpacked/
+```
+
+The script handles:
+- Title-level fonts → `Arial Black` (detects title placeholders by `type="title"` or `type="ctrTitle"`)
+- Background fills on dark-bg slides → `#0E2841`
+- Hardcoded dark blue text on light slides → `#0E2841`
+- Hardcoded white text on dark slides → `#FFFFFF` (no change needed; leaves as-is)
+- Reports a summary of all changes made
+
+#### 4. Manually inspect and fix remaining issues
+
+After running the script, some slides may need hand-editing. Common cases:
+
+**Slide classified as wrong background type:**
+
+The script uses slide index heuristics (slide 1 = dark, last slide = dark, everything else = light). Override by editing `<p:bg>` in the specific slide XML:
+
+Dark background:
+```xml
+<p:bg>
+  <p:bgPr>
+    <a:solidFill>
+      <a:srgbClr val="0E2841"/>
+    </a:solidFill>
+  </p:bgPr>
+</p:bg>
+```
+
+Light background (remove explicit `<p:bg>` entirely — let the slide master handle it):
+```xml
+<!-- Delete the entire <p:bg>...</p:bg> block -->
+```
+
+**Title font not changed (font defined in slide master, not in slide XML):**
+
+These are already controlled by the ADATA slide master/layout after theme replacement — no action needed. If you see a non-Arial-Black title after visual QA, check if the slide XML has an explicit override:
+
+```xml
+<!-- Find and remove or update this in the title run: -->
+<a:rPr ...>
+  <a:latin typeface="SomeOtherFont"/>   <!-- ← change to Arial Black or delete -->
+</a:rPr>
+```
+
+**Hardcoded accent color that was not replaced:**
+
+Find the color in slide XML: search for `<a:srgbClr val="XXXXXX"/>` and replace manually using the mapping table in SKILL.md.
+
+**Low-contrast text after background change:**
+
+If a slide background was changed to dark (`#0E2841`) but text remains dark:
+
+```xml
+<!-- Change text run color to white: -->
+<a:solidFill>
+  <a:srgbClr val="FFFFFF"/>
+</a:solidFill>
+```
+
+#### 5. Clean and pack
+
+```bash
+python scripts/clean.py source-unpacked/
+python scripts/office/pack.py source-unpacked/ output-adata.pptx --original source.pptx
+```
 
 ---
 
-## Workflow Overview
+## Template-Based Workflow
 
-```
-content.md → md2json.py → slides.json
-                              ↓
-            unpack template → add_slide → edit_slides (+ auto-reorder) → clean → pack → output.pptx
-```
+When using an existing presentation as a template:
 
-1. Write `content.md` (single source of truth for slide content)
-2. `python scripts/md2json.py content.md slides.json`
-3. `python scripts/office/unpack.py adata-template.pptx unpacked/`
-4. Run `add_slide.py` commands (printed by md2json)
-5. `python scripts/edit_slides.py unpacked/ slides.json "<FILENAME>.pptx"` — also auto-reorders slides and removes unused section pairs
-6. `python scripts/clean.py unpacked/`
-7. `python scripts/office/pack.py unpacked/ "<FILENAME>.pptx" --original adata-template.pptx`
-8. Cleanup: `Remove-Item -Recurse -Force unpacked, slides.json, content.md -ErrorAction SilentlyContinue`
+1. **Analyze existing slides**:
+   ```bash
+   python scripts/thumbnail.py template.pptx
+   python -m markitdown template.pptx
+   ```
+   Review `thumbnails.jpg` to see layouts, and markitdown output to see placeholder text.
 
-**Sections:** Unlimited. The template has 4 built-in section pairs; additional sections are duplicated automatically with cycling accent colours (Blue → Green → Orange → Magenta → Blue → …).
+2. **Plan slide mapping**: For each content section, choose a template slide.
+
+   ⚠️ **USE VARIED LAYOUTS** — monotonous presentations are a common failure mode. Don't default to basic title + bullet slides. Actively seek out:
+   - Multi-column layouts (2-column, 3-column)
+   - Image + text combinations
+   - Full-bleed images with text overlay
+   - Quote or callout slides
+   - Section dividers
+   - Stat/number callouts
+   - Icon grids or icon + text rows
+
+   **Avoid:** Repeating the same text-heavy layout for every slide.
+
+   Match content type to layout style (e.g., key points → bullet slide, team info → multi-column, testimonials → quote slide).
+
+3. **Unpack**: `python scripts/office/unpack.py template.pptx unpacked/`
+
+4. **Build presentation** (do this yourself, not with subagents):
+   - Delete unwanted slides (remove from `<p:sldIdLst>`)
+   - Duplicate slides you want to reuse (`add_slide.py`)
+   - Reorder slides in `<p:sldIdLst>`
+   - **Complete all structural changes before step 5**
+
+5. **Edit content**: Update text in each `slide{N}.xml`.
+   **Use subagents here if available** — slides are separate XML files, so subagents can edit in parallel.
+
+6. **Clean**: `python scripts/clean.py unpacked/`
+
+7. **Pack**: `python scripts/office/pack.py unpacked/ output.pptx --original template.pptx`
 
 ---
 
-## Step 1 — Write `content.md`
+## Scripts
 
-This Markdown file is parsed by `md2json.py`.
+| Script | Purpose |
+|--------|---------|
+| `unpack.py` | Extract and pretty-print PPTX |
+| `add_slide.py` | Duplicate slide or create from layout |
+| `clean.py` | Remove orphaned files |
+| `pack.py` | Repack with validation |
+| `thumbnail.py` | Create visual grid of slides |
 
-### Format
+### unpack.py
 
-```markdown
----
-title:
-  - Line 1
-  - Line 2
-subtitle: Subtitle text
-date: 2026/04/29          # optional — defaults to today
----
-
-## Section Title
-- Subtopic A
-- Subtopic B
-
-### Slide Title
-> Slide subtitle
-
-- Bullet item (level 0)
-  - Sub-bullet (level 1)
-    - Sub-sub-bullet (level 2)
-  Plain indented text (level 1, no bullet)
-
-### Another Slide
-> Another subtitle
-
-1. Numbered item (level 0)
-  1. Nested numbered (level 1)
-
-### Flowchart Slide
-> Process Overview
-
-```flowchart TB
-oval:n1:開始
-rect:n2:處理資料
-diamond:n3:成功?
-rect:n4:輸出結果
-oval:n5:結束
-n1->n2
-n2->n3
-n3->n4:Yes
-n3->n2:No
-n4->n5
+```bash
+python scripts/office/unpack.py input.pptx unpacked/
 ```
 
-### Table Slide
-> Feature Comparison
+Extracts PPTX, pretty-prints XML, escapes smart quotes.
 
-| 功能     | ADATA      | Brand A    |
-|---------|------------|------------|
-| 讀取速度 | 7,400 MB/s | 5,000 MB/s |
-| 保固年限 | 5 年       | 3 年       |
+### add_slide.py
+
+```bash
+python scripts/add_slide.py unpacked/ slide2.xml      # Duplicate slide
+python scripts/add_slide.py unpacked/ slideLayout2.xml # From layout
 ```
 
-### Rules
+Prints `<p:sldId>` to add to `<p:sldIdLst>` at desired position.
 
-| Syntax | Mapped to |
-|--------|----------|
-| `## Heading` | Section divider slide |
-| `- item` after `##` | Divider subtitles (max 3) |
-| `### Heading` | Content slide |
-| `> text` after `###` | Content slide subtitle |
-| `- item` | Bullet body item (`<a:buChar>`) |
-| `1. item` | Numbered body item (`<a:buAutoNum>`) |
-| Plain text | Plain paragraph (no bullet) |
-| ` ```flowchart TB` … ` ``` ` | **Flowchart** using native PPT shapes + arrows |
-| `\| col \| col \|` pipe table | **Native PPT table** with dark-navy header |
+### clean.py
 
-### Indentation (nesting)
-
-Indent with **2 spaces** per level:
-
-```markdown
-- Level 0                    → level: 0
-  - Level 1                  → level: 1
-    - Level 2                → level: 2
-  1. Level 1 numbered        → level: 1
-    Plain text at level 2    → level: 2
-```
-
-Max recommended depth: **3 levels** (0, 1, 2). Deeper nesting is supported but may crowd the slide.
-
-## Step 2 — Convert to JSON
-
-```powershell
-python scripts/md2json.py content.md slides.json
-```
-
-The script:
-- Generates `slides.json`
-- Prints required `add_slide.py` duplication commands
-- Reports which unused section pairs to delete
-
-## Step 3 — Unpack the Template
-
-```powershell
-python scripts/office/unpack.py adata-template.pptx unpacked/
-```
-
-`unpack.py` automatically:
-- Sanitizes zh-TW metadata in `docProps/app.xml`
-- Converts `.potx` content-type to `.pptx`
-
-## Step 4 — Structural Edits
-
-Run the `add_slide.py` commands printed by `md2json.py`. These duplicate both content slides (for multi-slide sections) and, for sections beyond 4, divider + content pairs.
-
-```powershell
-python scripts/add_slide.py unpacked/ slide4.xml
-```
-
-`add_slide.py` auto-inserts `<p:sldId>` into `presentation.xml`. Run once per needed duplicate.
-
-## Step 5 — Edit Content
-
-```powershell
-python scripts/edit_slides.py unpacked/ slides.json "<FILENAME>.pptx"
-```
-
-- Cover date defaults to **today** if `"date"` is omitted
-- Body items use `<a:buChar>` for bullets, `<a:buAutoNum>` for numbered lists
-- Indent level (`"level"` in JSON) maps to `<a:pPr lvl="N">` with progressive margins
-- `edit_slides.py` **auto-reorders** slides using `slide_order` from `slides.json`
-- Unused template section pairs are automatically removed from `presentation.xml`
-- `edit_slides.py` auto-updates `<Slides>N</Slides>` in `docProps/app.xml`
-
-## Steps 6–7 — Clean and Pack
-
-```powershell
+```bash
 python scripts/clean.py unpacked/
-python scripts/office/pack.py unpacked/ "<FILENAME>.pptx" --original adata-template.pptx
 ```
+
+Removes slides not in `<p:sldIdLst>`, unreferenced media, orphaned rels.
+
+### pack.py
+
+```bash
+python scripts/office/pack.py unpacked/ output.pptx --original input.pptx
+```
+
+Validates, repairs, condenses XML, re-encodes smart quotes.
+
+### thumbnail.py
+
+```bash
+python scripts/thumbnail.py input.pptx [output_prefix] [--cols N]
+```
+
+Creates `thumbnails.jpg` with slide filenames as labels. Default 3 columns, max 12 per grid.
+
+**Use for template analysis only** (choosing layouts). For visual QA, use `soffice` + `pdftoppm` to create full-resolution individual slide images—see SKILL.md.
 
 ---
 
-## `slides.json` Format
+## Slide Operations
 
-```json
-{
-  "cover": {
-    "title_lines": ["Line 1", "Line 2"],
-    "subtitle": "Your subtitle",
-    "date": "2026 / 04 / 29"
-  },
-  "agenda": {
-    "items": ["Section 1 Title", "Section 2 Title", "Section 3 Title"]
-  },
-  "dividers": {
-    "slide3.xml": {
-      "title": "Section Title",
-      "subtitles": ["Topic A", "Topic B", "Topic C"]
-****    }
-  },
-  "contents": {
-    "slide4.xml": {
-      "title": "Slide Title",
-      "subtitle": "Category",
-      "body": [
-        {"type": "bullet", "text": "Top-level bullet"},
-        {"type": "bullet", "text": "Sub-bullet", "level": 1},
-        {"type": "bullet", "text": "Sub-sub-bullet", "level": 2},
-        {"type": "number", "text": "Numbered item"},
-        {"type": "number", "text": "Nested numbered", "level": 1},
-        {"type": "plain",  "text": "Plain paragraph"}
-      ]
-    }
-  }
-}
-```
+Slide order is in `ppt/presentation.xml` → `<p:sldIdLst>`.
 
-**Rules:**
-- `title_lines`: each entry becomes a line (joined by `<a:br/>`)
-- `date`: optional — defaults to today (`YYYY / MM / DD`)
-- `body` items: `{"type": "bullet|number|plain", "text": "...", "level": N}`
-  - `"level"`: indent depth (0 = top, 1 = sub, 2 = sub-sub). Defaults to 0 if omitted.
-  - `"bullet"` → `<a:buChar char="•"/>`, `"number"` → `<a:buAutoNum>`, `"plain"` → no bullet
-- Legacy string format also accepted (`"Line 1\nLine 2"` → each line becomes a level-0 bullet)
-### Flowchart slide JSON
+**Reorder**: Rearrange `<p:sldId>` elements.
 
-Omit `"body"` and add `"flowchart"` instead:
+**Delete**: Remove `<p:sldId>`, then run `clean.py`.
 
-```json
-"slide4.xml": {
-  "title": "Process Flow",
-  "subtitle": "System Overview",
-  "flowchart": {
-    "direction": "TB",
-    "nodes": [
-      {"id": "n1", "shape": "oval",    "text": "Start"},
-      {"id": "n2", "shape": "rect",    "text": "Process A"},
-      {"id": "n3", "shape": "diamond", "text": "Decision?"},
-      {"id": "n4", "shape": "rect",    "text": "Done"},
-      {"id": "n5", "shape": "oval",    "text": "End"}
-    ],
-    "edges": [
-      {"from": "n1", "to": "n2"},
-      {"from": "n2", "to": "n3"},
-      {"from": "n3", "to": "n4", "label": "Yes"},
-      {"from": "n3", "to": "n2", "label": "No"},
-      {"from": "n4", "to": "n5"}
-    ]
-  }
-}
-```
-
-`direction`: `"TB"` (top→bottom, default) or `"LR"` (left→right).  
-Supported `shape` values: `oval` · `rect` · `diamond` · `para` · `doc` · `db`.  
-Optional keys: `fill_color`, `line_color`, `text_color` (all hex strings).
-
-### Table slide JSON
-
-Omit `"body"` and add `"table"` instead:
-
-```json
-"slide6.xml": {
-  "title": "Comparison",
-  "subtitle": "",
-  "table": {
-    "header": ["Feature", "ADATA", "Competitor"],
-    "rows": [
-      ["Read Speed",  "7,400 MB/s", "5,000 MB/s"],
-      ["Write Speed", "6,900 MB/s", "4,200 MB/s"],
-      ["Warranty",    "5 years",    "3 years"]
-    ]
-  }
-}
-```
-
-Optional key: `header_fill` (hex, default `0E2841` dark navy).  
-Columns are auto-sized equally across the slide width.  
-Header row: dark-navy fill, white bold text.  
-Data rows: alternating white / light-gray, navy text.
----
-
-## XML Editing Reference
-
-### Placeholder types by slide
-
-| Slide type | PH type / idx | Content | Font |
-|---|---|---|---|
-| Cover | `ctrTitle` / idx 0 | Title | Arial Black 66pt |
-| Cover | idx 10 | Subtitle | 32pt |
-| Cover | idx 11 | Date | 16pt |
-| Section Divider | `title` / idx 0 | Section title | Arial Black 66pt |
-| Section Divider | idx 10 | Subtitles | 28pt |
-| Content | `title` / idx 0 | Main title | Arial Black 55pt (section accent colour) |
-| Content | idx 1 | Subtitle | 30pt |
-| Content | idx 2 | Body | 24pt |
-
-### Formatting rules
-
-- Set `lang="zh-TW"` on Chinese text, `lang="en-US"` on English
-- Bold labels with `b="1"` on `<a:rPr>`
-- Never use unicode bullets (`•`) — use `<a:buChar>` or `<a:buAutoNum>`
-- Preserve font sizes from `<a:lstStyle>` — only override in `<a:rPr>` when necessary
-
-### Smart quotes in Chinese text
-
-| Character | XML Entity |
-|-----------|-----------|
-| `"` (left) | `&#x201C;` |
-| `"` (right) | `&#x201D;` |
-| `「` (CJK left) | `&#x300C;` |
-| `」` (CJK right) | `&#x300D;` |
+**Add**: Use `add_slide.py`. Never manually copy slide files—the script handles notes references, Content_Types.xml, and relationship IDs that manual copying misses.
 
 ---
 
-## Section Color Reference
+## Editing Content
 
-| Section | Slides | Hex | XML |
-|---------|--------|-----|-----|
-| 1 | 3–4 | `#5097FF` | `<a:srgbClr val="5097FF"/>` |
-| 2 | 5–6 | `#19C711` | `<a:srgbClr val="19C711"/>` |
-| 3 | 7–8 | `#FF9000` | `<a:srgbClr val="FF9000"/>` |
-| 4 | 9–10 | `#FF47FF` | `<a:srgbClr val="FF47FF"/>` |
+**Subagents:** If available, use them here (after completing step 4). Each slide is a separate XML file, so subagents can edit in parallel. In your prompt to subagents, include:
+- The slide file path(s) to edit
+- **"Use the Edit tool for all changes"**
+- The formatting rules and common pitfalls below
 
-Theme references: `<a:schemeClr val="accent1"/>` through `accent4`.
+For each slide:
+1. Read the slide's XML
+2. Identify ALL placeholder content—text, images, charts, icons, captions
+3. Replace each placeholder with final content
 
-> When duplicating a content slide for a different section, update the `<a:srgbClr val="..."/>` in the title's `<a:lstStyle>` to match the target section.
+**Use the Edit tool, not sed or Python scripts.** The Edit tool forces specificity about what to replace and where, yielding better reliability.
+
+### Formatting Rules
+
+- **Bold all headers, subheadings, and inline labels**: Use `b="1"` on `<a:rPr>`. This includes:
+  - Slide titles
+  - Section headers within a slide
+  - Inline labels like (e.g.: "Status:", "Description:") at the start of a line
+- **Never use unicode bullets (•)**: Use proper list formatting with `<a:buChar>` or `<a:buAutoNum>`
+- **Bullet consistency**: Let bullets inherit from the layout. Only specify `<a:buChar>` or `<a:buNone>`.
 
 ---
 
 ## Common Pitfalls
 
-| Issue | Fix |
-|-------|-----|
-| Duplicated slide has wrong accent colour | Update `<a:srgbClr>` in title `<a:lstStyle>` |
-| Agenda items out of sync | Update agenda slide to match actual section titles |
-| Multi-item bullets in one `<a:t>` | Use separate `<a:p>` elements per item |
-| PowerShell inline Python regex breaks | Write a `.py` file instead of `python -c` |
+### Template Adaptation
+
+When source content has fewer items than the template:
+- **Remove excess elements entirely** (images, shapes, text boxes), don't just clear text
+- Check for orphaned visuals after clearing text content
+- Run visual QA to catch mismatched counts
+
+When replacing text with different length content:
+- **Shorter replacements**: Usually safe
+- **Longer replacements**: May overflow or wrap unexpectedly
+- Test with visual QA after text changes
+- Consider truncating or splitting content to fit the template's design constraints
+
+**Template slots ≠ Source items**: If template has 4 team members but source has 3 users, delete the 4th member's entire group (image + text boxes), not just the text.
+
+### Multi-Item Content
+
+If source has multiple items (numbered lists, multiple sections), create separate `<a:p>` elements for each — **never concatenate into one string**.
+
+**❌ WRONG** — all items in one paragraph:
+```xml
+<a:p>
+  <a:r><a:rPr .../><a:t>Step 1: Do the first thing. Step 2: Do the second thing.</a:t></a:r>
+</a:p>
+```
+
+**✅ CORRECT** — separate paragraphs with bold headers:
+```xml
+<a:p>
+  <a:pPr algn="l"><a:lnSpc><a:spcPts val="3919"/></a:lnSpc></a:pPr>
+  <a:r><a:rPr lang="en-US" sz="2799" b="1" .../><a:t>Step 1</a:t></a:r>
+</a:p>
+<a:p>
+  <a:pPr algn="l"><a:lnSpc><a:spcPts val="3919"/></a:lnSpc></a:pPr>
+  <a:r><a:rPr lang="en-US" sz="2799" .../><a:t>Do the first thing.</a:t></a:r>
+</a:p>
+<a:p>
+  <a:pPr algn="l"><a:lnSpc><a:spcPts val="3919"/></a:lnSpc></a:pPr>
+  <a:r><a:rPr lang="en-US" sz="2799" b="1" .../><a:t>Step 2</a:t></a:r>
+</a:p>
+<!-- continue pattern -->
+```
+
+Copy `<a:pPr>` from the original paragraph to preserve line spacing. Use `b="1"` on headers.
+
+### Smart Quotes
+
+Handled automatically by unpack/pack. But the Edit tool converts smart quotes to ASCII.
+
+**When adding new text with quotes, use XML entities:**
+
+```xml
+<a:t>the &#x201C;Agreement&#x201D;</a:t>
+```
+
+| Character | Name | Unicode | XML Entity |
+|-----------|------|---------|------------|
+| `“` | Left double quote | U+201C | `&#x201C;` |
+| `”` | Right double quote | U+201D | `&#x201D;` |
+| `‘` | Left single quote | U+2018 | `&#x2018;` |
+| `’` | Right single quote | U+2019 | `&#x2019;` |
+
+### XML Special Characters
+
+Any literal `<`, `>`, or `&` in text content **will break the XML** and cause PowerPoint to reject the file.
+Always escape them before writing into `<a:t>`:
+
+| Character | Escaped form |
+|-----------|-------------|
+| `<`       | `&lt;`      |
+| `>`       | `&gt;`      |
+| `&`       | `&amp;`     |
+| `"`       | `&quot;`    |
+
+Example: "latency < 0.1 ms & tested" → `latency &lt; 0.1 ms &amp; tested`
+
+### Template Content Type (`.potx` → `.pptx`)
+
+If the template file was originally a `.potx`, its `[Content_Types].xml` declares:
+
+```xml
+ContentType="application/vnd.openxmlformats-officedocument.presentationml.template.main+xml"
+```
+
+This causes `markitdown` (and some validators) to reject the file. Fix it immediately after unpacking:
+
+```python
+import re, pathlib
+
+ct = pathlib.Path("unpacked/[Content_Types].xml")
+ct.write_text(
+    ct.read_text(encoding="utf-8").replace(
+        "presentationml.template.main+xml",
+        "presentationml.presentation.main+xml"
+    ),
+    encoding="utf-8"
+)
+```
+
+Run this **before** any content editing.
+
+### Stubborn Placeholder Text (`dirty="0"`)
+
+Some slides have placeholder runs marked `dirty="0"` or with `<a:pPr lvl="0"/>`, which causes the text to survive a naive string-replace. If a placeholder still shows after editing, use a Python script to force-clear all text runs in the affected text box:
+
+```python
+import re, pathlib
+
+xml = pathlib.Path("unpacked/ppt/slides/slideN.xml").read_text(encoding="utf-8")
+# Target the specific txBody that still holds placeholder text and wipe its <a:t> nodes
+xml = re.sub(r'(<a:t>)(PLACEHOLDER_TEXT)(</a:t>)', r'\1\3', xml)
+pathlib.Path("unpacked/ppt/slides/slideN.xml").write_text(xml, encoding="utf-8")
+```
+
+Or, if the entire text box should be blank, remove all `<a:t>` content inside that `<p:txBody>`.
+
+### Section Divider Subtitle Length
+
+The section divider layout reserves a fixed-height box for subtitles. Long subtitles **wrap and overflow**:
+
+- **Hard limit: ≤ 8 Chinese characters per subtitle line**
+- If the source content is longer, abbreviate (e.g., "XPG GAMMIX S70 Blade 規格解析" → "S70 Blade 規格解析")
+- Check wrapping in Visual QA — this issue is invisible in the XML
+
+### Section Divider Title Font Size
+
+Chinese section titles longer than ~6 characters may wrap inside the title box because the lstStyle font size is fixed at 6600 (66 pt). If the title wraps to 3+ lines:
+
+1. Open `unpacked/ppt/slides/slideN.xml`
+2. Find `<a:lstStyle>` inside the title `<p:txBody>`
+3. Reduce the `<a:sz>` value (e.g., `val="6600"` → `val="5200"`)
+
+Verify with Visual QA after changing.
+
+### Cover Slide Date Placeholder
+
+The cover slide contains a date field driven by `<p:fldType type="datetime"/>`. It auto-populates with today's date and **cannot be left as-is** if you want a specific date or no date.
+
+To set a specific date, replace the `<a:fldId>` field element with a plain `<a:r>` run:
+
+```xml
+<!-- Remove this -->
+<a:fldId .../>
+
+<!-- Add this instead -->
+<a:r>
+  <a:rPr lang="zh-TW" .../>
+  <a:t>2026 / 01</a:t>
+</a:r>
+```
+
+To clear the date entirely, remove all `<a:r>` and `<a:fld>` elements from that `<a:p>` paragraph, leaving only `<a:pPr>` and `<a:endParaRPr>`.
+
+### Other
+
+- **Whitespace**: Use `xml:space="preserve"` on `<a:t>` with leading/trailing spaces
+- **XML parsing**: Use `defusedxml.minidom`, not `xml.etree.ElementTree` (corrupts namespaces)

@@ -23,16 +23,6 @@ import defusedxml.minidom
 from helpers.merge_runs import merge_runs as do_merge_runs
 from helpers.simplify_redlines import simplify_redlines as do_simplify_redlines
 
-# zh-TW metadata strings in ADATA .potx files that cause codec errors on non-UTF-8 systems
-_CJK_APP_XML_REPLACEMENTS = {
-    "\u5BEC\u87A2\u5E55": "Widescreen",
-    "\u4F7F\u7528\u5B57\u578B": "Fonts Used",
-    "\u4F48\u666F\u4E3B\u984C": "Theme",
-    "\u6295\u5F71\u7247\u6A19\u984C": "Slide Titles",
-    "PowerPoint \u7C21\u5831": "PowerPoint Presentation",
-    "Office \u4F48\u666F\u4E3B\u984C": "Office Theme",
-}
-
 SMART_QUOTE_REPLACEMENTS = {
     "\u201c": "&#x201C;",  
     "\u201d": "&#x201D;",  
@@ -81,45 +71,12 @@ def unpack(
         for xml_file in xml_files:
             _escape_smart_quotes(xml_file)
 
-        if suffix == ".pptx":
-            _fix_pptx_cjk_metadata(output_path)
-
         return None, message
 
     except zipfile.BadZipFile:
         return None, f"Error: {input_file} is not a valid Office file"
     except Exception as e:
         return None, f"Error unpacking: {e}"
-
-
-def _fix_pptx_cjk_metadata(output_path: Path) -> None:
-    """Fix zh-TW metadata in ADATA .potx-derived files that cause codec errors.
-
-    Sanitizes Chinese strings in docProps/app.xml and converts the content
-    type from template (.potx) to presentation (.pptx). Called automatically
-    after unpacking any .pptx file.
-    """
-    app_xml = output_path / "docProps" / "app.xml"
-    if app_xml.exists():
-        try:
-            xml = app_xml.read_text(encoding="utf-8")
-            for zh, en in _CJK_APP_XML_REPLACEMENTS.items():
-                xml = xml.replace(zh, en)
-            app_xml.write_text(xml, encoding="utf-8")
-        except Exception:
-            pass
-
-    content_types = output_path / "[Content_Types].xml"
-    if content_types.exists():
-        try:
-            xml = content_types.read_text(encoding="utf-8")
-            xml = xml.replace(
-                "presentationml.template.main+xml",
-                "presentationml.presentation.main+xml",
-            )
-            content_types.write_text(xml, encoding="utf-8")
-        except Exception:
-            pass
 
 
 def _pretty_print_xml(xml_file: Path) -> None:

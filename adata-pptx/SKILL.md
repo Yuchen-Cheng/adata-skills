@@ -1,592 +1,274 @@
 ---
 name: adata-pptx
-description: "Use this skill whenever creating or editing ADATA PowerPoint presentations using the 2026-ADATA-PPT Template.potx. Covers cover slides, agenda, section dividers, content slides, charts, images, and bulk generation from data — all constrained to ADATA brand colors and layouts. Trigger whenever the user mentions ADATA (威剛) slides, ADATA (威剛) deck, ADATA (威剛) presentation, or asks to create a presentation in the ADATA (威剛) style."
+description: "Use this skill any time a .pptx file is involved in any way — as input, output, or both. This includes: creating slide decks, pitch decks, or presentations; reading, parsing, or extracting text from any .pptx file (even if the extracted content will be used elsewhere, like in an email or summary); editing, modifying, or updating existing presentations; combining or splitting slide files; working with templates, layouts, speaker notes, or comments. Trigger whenever the user mentions \"deck,\" \"slides,\" \"presentation,\" or references a .pptx filename, regardless of what they plan to do with the content afterward. If a .pptx file needs to be opened, created, or touched, use this skill."
+license: Proprietary. LICENSE.txt has complete terms
 ---
 
-# ADATA PPT Skill
+# ADATA 威剛簡報 Skill
 
-Two workflows available — pick the one that fits your task.
+本 Skill 專為產出 **ADATA（威剛）品牌風格**的簡報而設計。所有簡報一律使用官方模板 `adata-template/adata-template.pptx`，嚴格遵守品牌色彩、字型與版面規範。
 
-| Workflow | When to use | Command |
-|----------|-------------|---------|
-| **Convert existing PPTX** | Re-brand an existing deck to ADATA style | `python .agents/skills/adata-pptx/scripts/convert_pptx.py source.pptx [output.pptx]` |
-| **Build from scratch** | Create a new ADATA deck from Markdown content | See [editing.md](editing.md) |
-| **Add charts / images** | Enrich slides with charts, product images, or data visualizations | See § [Chart Slides](#chart-slides-python-pptx-chart) / [Image Slides](#image-slides) |
-| **Bulk generation** | Generate many slides automatically from CSV / JSON data | See § [Bulk Generation](#bulk-generation-from-data) |
+## Quick Reference
 
-Dependency: `pip install python-pptx lxml pandas pillow`
-
----
-
-## 1 — Convert an Existing PPTX
-
-### Usage
-
-```powershell
-python .agents/skills/adata-pptx/scripts/convert_pptx.py  source.pptx  output-adata.pptx
-```
-
-Omit the output name to auto-generate `<source>-adata.pptx`.
-
-### What is preserved
-
-| Element | Status | Notes |
-|---------|--------|-------|
-| Title text | ✅ | Placed into template title placeholder; font/size/colour from template |
-| Subtitle text | ✅ | Placed into subtitle placeholder |
-| Body text (paragraphs) | ✅ | Placed into body placeholder; inherits template styling |
-| Images | ✅ | Re-inserted with coordinates scaled to ADATA slide dimensions |
-| Tables | ✅ | Recreated with dark-navy header, accent first column |
-| Speaker notes | ✅ | Copied verbatim |
-| Charts / SmartArt | ⚠️ | Text extracted as plain paragraphs; graphic not preserved |
-| Animations / transitions | ❌ | Stripped (ADATA template has none) |
-| Source fonts / colours | ❌ | Replaced by ADATA brand (Arial Black titles, template body styling) |
-
-### Slide auto-classification
-
-| Source slide | Mapped to | Rule |
-|---|---|---|
-| First slide | **Cover** | Always |
-| Title only, no body/images/tables | **Section Divider** | Empty content |
-| Title + ≤ 2 body lines, no images/tables | **Section Divider** | Sparse content |
-| Last slide if empty | **Closing** | Position + empty |
-| Everything else | **Content** | Default |
-
-Section dividers increment a section counter. Accent colours cycle:
-**Blue** `#5097FF` → **Green** `#19C711` → **Orange** `#FF9000` → **Magenta** `#FF47FF` (wraps after 4).
-
-### Layout mapping
-
-| Slide type | Template layout | Placeholders used |
-|---|---|---|
-| Cover | Layout 0 — 標題投影片 | idx 0 (title 66pt), idx 10 (subtitle 32pt) |
-| Divider | Layout 2 — 章節標題 | idx 0 (title 66pt), idx 10 (subtitles 28pt) |
-| Content | Layout 5 — 只有標題 | idx 0 (title 55pt), idx 1 (subtitle 30pt), idx 2 (body 24pt) |
-| Closing | Layout 10 — 空白 | Text box if title present |
-
-All title sizes, subtitle sizes, and body sizes are **inherited from the template layout** — no hardcoded overrides.
-
-### Post-conversion checklist
-
-1. Open in PowerPoint and review visually.
-2. Confirm section divider + following content slides share the same accent colour.
-3. Adjust slides where images or tables overlap text.
-4. If a content slide has > 6 body items, consider splitting.
+| Task | Guide |
+|------|-------|
+| 讀取 / 分析現有簡報 | `python -m markitdown presentation.pptx` |
+| **來源為現有 PPTX → 轉換 ADATA 風格** | **見下方 [Source Conversion Mode](#source-conversion-mode-保留內容只改樣式)** |
+| 從零建立（無來源）→ 使用 ADATA 模板 | Read [editing.md](editing.md) |
+| 無模板從零建立（不建議） | Read [pptxgenjs.md](pptxgenjs.md) |
 
 ---
 
-## 2 — Build from Scratch
+## 工作模式選擇
 
-See [editing.md](editing.md) for the full template-based workflow:
-`content.md` → `md2json.py` → `unpack` → `add_slide` → `edit_slides` (auto-reorder) → `clean` → `pack`.
+> **⚠️ 判斷模式是第一步，錯誤的模式會浪費大量時間。**
 
-Unlimited sections supported — colours cycle Blue → Green → Orange → Magenta → …
+| 情境 | 使用模式 |
+|------|---------|
+| 使用者提供 source `.pptx` / `.ppt`，要求轉換為威剛風格 | **Source Conversion Mode**（保留內容，只改樣式） |
+| 從零開始建立新簡報，或提供的 source 是文字/PDF/逐字稿 | **Template Mode**（以 ADATA 模板為起點，重建內容） |
 
----
-
-## Template Reference
-
-### Template structure (11 slides)
-
-| Slide | Type | Purpose |
-|-------|------|---------|
-| 1 | Cover | Title, subtitle, date |
-| 2 | Agenda | Table of contents |
-| 3 | Section Divider | Section 1 (Blue) |
-| 4 | Content | Section 1 content |
-| 5 | Section Divider | Section 2 (Green) |
-| 6 | Content | Section 2 content |
-| 7 | Section Divider | Section 3 (Orange) |
-| 8 | Content | Section 3 content |
-| 9 | Section Divider | Section 4 (Magenta) |
-| 10 | Content | Section 4 content |
-| 11 | Blank | Closing |
-
-### Slide layouts (0-based index)
-
-| Index | Name (zh-TW) | English | Placeholders |
-|-------|-------------|---------|--------------|
-| 0 | 標題投影片 | Cover | idx 0 (66pt), idx 10 (32pt), idx 11 (16pt) |
-| 1 | 標題及內容 | Title + Content | idx 0 (66pt), idx 13 (28pt body) |
-| 2 | 章節標題 | Section Header | idx 0 (66pt), idx 10 (28pt) |
-| 3 | 兩個內容 | Two Content | idx 0 (55pt), idx 1, idx 2 (24pt) |
-| 4 | 比較 | Comparison | idx 0 (66pt), idx 10 (28pt) |
-| 5 | 只有標題 | Title Only | idx 0 (55pt), idx 1 (30pt), idx 2 (24pt) |
-| 6 | 1_比較 | Sec 1 Comparison | idx 0 (66pt), idx 10 (28pt) |
-| 7 | 1_只有標題 | Sec 1 Title Only | idx 0 (55pt), idx 1 (30pt), idx 2 (24pt) |
-| 8 | 2_比較 | Sec 2 Comparison | idx 0 (66pt), idx 10 (28pt) |
-| 9 | 2_只有標題 | Sec 2 Title Only | idx 0 (55pt), idx 1 (30pt), idx 2 (24pt) |
-| 10 | 空白 | Blank | (none) |
-
-### Color palette
-
-| Role | Hex | Usage |
-|------|-----|-------|
-| Dark Navy | `#0E2841` | Background, dark emphasis |
-| White | `#FFFFFF` | Text on dark backgrounds |
-| Light Gray | `#E8E8E8` | Secondary backgrounds |
-| Section 1 — Blue | `#5097FF` | accent1 |
-| Section 2 — Green | `#19C711` | accent2 |
-| Section 3 — Orange | `#FF9000` | accent3 |
-| Section 4 — Magenta | `#FF47FF` | accent4 |
-| Cyan | `#5FE6FF` | accent5 — highlights |
-| Bright Green | `#40FF00` | accent6 — sparingly |
-| Hyperlink Purple | `#734BFF` | Links only |
-
-### Typography
-
-| Element | Font | Size | Source |
-|---------|------|------|--------|
-| Cover / divider title | Arial Black | 66pt | Layout lstStyle |
-| Content title | Arial Black | 55pt | Layout lstStyle |
-| Subtitle | Layout default | 28–32pt | Layout lstStyle |
-| Body text | Layout default | 24pt | Layout lstStyle |
-
-> Font sizes are defined in the template layout's `<a:lstStyle>`. The conversion script does **not** override sizes — it only sets font face (Arial Black) and colour on titles.
-
-### Design rules
-
-- **Dark backgrounds** on cover, dividers, and closing
-- **Light backgrounds** on content slides
-- **Section accent colour** on content slide titles must match its divider
-- **Arial Black** for all titles — never substitute
-- Max **6 body items** per content slide, **15 words** per item
-- Max **3 subtitles** per divider, **8 words** each
-
-#### Content representation priority
-
-**Prefer visual structures over plain text whenever the content allows it.**
-
-| Content type | Preferred representation |
-|---|---|
-| Sequential steps, processes, workflows | **Flowchart** (`shape: rect`, with arrows) |
-| Branching logic, decision trees | **Flowchart** (include `diamond` decision nodes) |
-| Comparisons across multiple items or attributes | **Table** |
-| Structured data, specs, feature lists | **Table** |
-| Simple enumeration (≤ 6 short items, no natural structure) | Bullet list |
-| Narrative or explanatory text | Plain paragraphs |
-| Trend data over time | **Line chart** (§ Chart Slides) |
-| Numeric comparisons across categories | **Bar / column chart** (§ Chart Slides) |
-| Parts-of-whole breakdown (≤ 6 segments) | **Pie / donut chart** (§ Chart Slides) |
-
-> **Rule:** If content can be expressed as a chart, flowchart, or table, always choose that over bullet text. Use bullet lists only when no visual structure applies. Never convert a natural table, process, or data set into a bullet list.
+**選擇規則：只要 source 是 PPTX 檔案 → 一律使用 Source Conversion Mode。**
 
 ---
 
-## Scripts
+## 模板路徑
 
-All scripts are in `.agents/skills/adata-pptx/scripts/`. Paths below are relative to the skill folder.
+**永遠使用以下官方模板作為起點：**
 
-| Script | Purpose |
-|--------|---------|
-| `scripts/convert_pptx.py` | Convert existing PPTX → ADATA style |
-| `scripts/md2json.py` | Markdown → slides.json |
-| `scripts/edit_slides.py` | Bulk-edit slide content from JSON |
-| `scripts/add_slide.py` | Duplicate a content slide |
-| `scripts/clean.py` | Remove orphaned slide files |
-| `scripts/thumbnail.py` | Generate thumbnail grid |
-| `scripts/flowchart.py` | Render flowcharts + native tables onto slides |
-| `scripts/office/unpack.py` | Unpack PPTX to folder |
-| `scripts/office/pack.py` | Pack folder to PPTX |
+```
+adata-template/adata-template.pptx
+```
 
-**Rules:**
-- If a topic needs more than 6 bullets, **split it across two content slides** (duplicate the slide with `add_slide.py`).
-- Prefer short, scannable phrases over full sentences.
-- Each item should express one idea only — no compound bullets joined with `;` or `,`.
-- When converting source material (articles, docs), **summarise and condense** — do not copy paragraphs verbatim.
+請勿自訂或替換模板。所有色彩、字型、版面已內建於模板中。
 
 ---
 
-## Flowchart Slides (Native PPT Shapes)
+## ADATA 品牌規範（強制遵守）
 
-Flowcharts use **PowerPoint's built-in preset geometry shapes** (`flowChartProcess`, `flowChartDecision`, `flowChartTerminator`, etc.) and `<p:cxnSp>` connectors with arrow heads — **not images or SmartArt**.
+### 品牌色彩
 
-### Supported node shapes
+| 角色 | Hex | 使用場合 |
+|------|-----|---------|
+| 深海軍藍 | `#0E2841` | 封面、章節標題、結尾投影片背景 |
+| 白色 | `#FFFFFF` | 深色背景上的所有文字 |
+| 淺灰 | `#E8E8E8` | 內容投影片次要背景 |
 
-| `shape` value | PPT preset | Use for |
-|---------------|-----------|---------|
-| `oval`    | flowChartTerminator | Start / End |
-| `rect`    | flowChartProcess    | Process step |
-| `diamond` | flowChartDecision   | Decision / Branch |
-| `para`    | flowChartInputOutput | Input / Output |
-| `doc`     | flowChartDocument   | Document output |
-| `db`      | flowChartDatabase   | Database / Storage |
+### 章節強調色（依序循環）
 
-### `content.md` syntax — flowchart code block
+循環順序：**Blue → Green → Orange → Magenta → Blue → …**
 
-Place a ` ```flowchart ` fenced block inside a `###` slide.  
-First token after the fence sets the layout direction (`TB` = top-to-bottom, `LR` = left-to-right).
+| 章節 | 名稱 | Hex | 主題參照 |
+|------|------|-----|---------|
+| 第 1 節 | 藍色 | `#5097FF` | `accent1` |
+| 第 2 節 | 綠色 | `#19C711` | `accent2` |
+| 第 3 節 | 橘色 | `#FF9000` | `accent3` |
+| 第 4 節 | 洋紅色 | `#FF47FF` | `accent4` |
+| 強調色 | 青色 | `#5FE6FF` | `accent5` |
+| 強調色 | 亮綠色 | `#40FF00` | `accent6` |
+| 超連結 | 紫色 | `#734BFF` | 僅用於連結 |
 
-```markdown
-### Process Flow
-> System Overview
+### 字型規範
 
-```flowchart TB
-oval:n1:開始
-rect:n2:讀取資料
-diamond:n3:資料正確?
-rect:n4:寫入資料庫
-rect:n5:記錄錯誤
-oval:n6:結束
-n1->n2
-n2->n3
-n3->n4:Yes
-n3->n5:No
-n4->n6
-n5->n6
-```
-```
+| 元素 | 字型 | 大小 |
+|------|------|------|
+| 封面 / 章節標題 | **Arial Black** | 66pt |
+| 內容標題 | **Arial Black** | 55pt |
+| 副標題 | 版面預設 | 28–32pt |
+| 內文 | 版面預設 | 24pt |
 
-### `slides.json` format — flowchart
-
-```json
-"slide4.xml": {
-  "title": "Process Flow",
-  "subtitle": "System Overview",
-  "flowchart": {
-    "direction": "TB",
-    "nodes": [
-      {"id": "n1", "shape": "oval",    "text": "Start"},
-      {"id": "n2", "shape": "rect",    "text": "Process"},
-      {"id": "n3", "shape": "diamond", "text": "Success?"},
-      {"id": "n4", "shape": "rect",    "text": "Done"},
-      {"id": "n5", "shape": "oval",    "text": "End"}
-    ],
-    "edges": [
-      {"from": "n1", "to": "n2"},
-      {"from": "n2", "to": "n3"},
-      {"from": "n3", "to": "n4", "label": "Yes"},
-      {"from": "n3", "to": "n2", "label": "No"},
-      {"from": "n4", "to": "n5"}
-    ]
-  }
-}
-```
-
-Optional flowchart keys: `fill_color` (hex, overrides section accent), `line_color` (default white), `text_color` (default white).
-
-> **Body text is cleared** when a flowchart is present — do not specify `"body"` on the same slide.
+> ⚠️ 字型大小定義於版面配置的 `<a:lstStyle>` 中，**不得**於個別投影片覆蓋。
 
 ---
 
-## Table Slides (Native PPT Table)
+## 模板投影片結構
 
-Tables use **PowerPoint's native `<a:tbl>` table element** — not text boxes or images.  
-Header row: dark-navy fill, white bold text.  
-Data rows: alternating white / light-gray rows, navy text.
+模板預設包含 **11 張投影片**，請依此規劃內容：
 
-### `content.md` syntax — Markdown pipe table
+| 投影片 | 類型 | 用途 |
+|--------|------|------|
+| 1 | 封面（Cover） | 標題、副標題、日期 |
+| 2 | 議程（Agenda） | 目錄 |
+| 3 | 章節標題（Section Divider） | 第 1 節（藍色 `#5097FF`） |
+| 4 | 內容（Content） | 第 1 節內容 |
+| 5 | 章節標題（Section Divider） | 第 2 節（綠色 `#19C711`） |
+| 6 | 內容（Content） | 第 2 節內容 |
+| 7 | 章節標題（Section Divider） | 第 3 節（橘色 `#FF9000`） |
+| 8 | 內容（Content） | 第 3 節內容 |
+| 9 | 章節標題（Section Divider） | 第 4 節（洋紅色 `#FF47FF`） |
+| 10 | 內容（Content） | 第 4 節內容 |
+| 11 | 空白（Blank） | 結尾投影片 |
 
-Place a standard pipe table inside a `###` slide:
-
-```markdown
-### Feature Comparison
-> ADATA vs Competitors
-
-| Feature      | ADATA        | Brand A      | Brand B      |
-|-------------|-------------|-------------|-------------|
-| Read Speed   | 7,400 MB/s  | 6,800 MB/s  | 5,000 MB/s  |
-| Write Speed  | 6,900 MB/s  | 6,000 MB/s  | 4,200 MB/s  |
-| DRAM Buffer  | ✓           | ✓           | ✗           |
-| Warranty     | 5 years     | 5 years     | 3 years     |
-```
-
-### `slides.json` format — table
-
-```json
-"slide6.xml": {
-  "title": "Feature Comparison",
-  "subtitle": "ADATA vs Competitors",
-  "table": {
-    "header": ["Feature", "ADATA", "Brand A", "Brand B"],
-    "rows": [
-      ["Read Speed",  "7,400 MB/s", "6,800 MB/s", "5,000 MB/s"],
-      ["Write Speed", "6,900 MB/s", "6,000 MB/s", "4,200 MB/s"],
-      ["DRAM Buffer", "✓",          "✓",           "✗"],
-      ["Warranty",    "5 years",    "5 years",     "3 years"]
-    ]
-  }
-}
-```
-
-Optional key: `header_fill` (hex, default `0E2841` dark navy).
-
-> **Body text is cleared** when a table is present — do not specify `"body"` on the same slide.
-
-### Section Divider Structure
-
-Section divider slides (3, 5, 7, 9) have:
-```
-[Section Title — white, Arial Black 66pt, bottom-aligned]
-[3 subtitle items — listed bullet points]
-```
+章節數量可依需求增減，但**強調色必須依 Blue → Green → Orange → Magenta 循環**。
 
 ---
 
-## Chart Slides (python-pptx Chart)
+## Editing Workflow
 
-Charts use **python-pptx's native chart objects** placed on content slides (Layout 5 — 只有標題).  
-Always apply ADATA brand colors to chart series — never use the library's default color scheme.
+**Read [editing.md](editing.md) for full details.**
 
-### ADATA color constants for charts
-
-```python
-from pptx.dml.color import RGBColor
-
-# Cycle through these for multi-series charts
-ADATA_ACCENT = [
-    RGBColor(0x50, 0x97, 0xFF),  # Blue    (section 1)
-    RGBColor(0x19, 0xC7, 0x11),  # Green   (section 2)
-    RGBColor(0xFF, 0x90, 0x00),  # Orange  (section 3)
-    RGBColor(0xFF, 0x47, 0xFF),  # Magenta (section 4)
-    RGBColor(0x5F, 0xE6, 0xFF),  # Cyan    (highlight)
-]
-ADATA_NAVY  = RGBColor(0x0E, 0x28, 0x41)
-ADATA_WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-```
-
-### Adding a chart to a content slide
-
-```python
-from pptx import Presentation
-from pptx.util import Inches
-from pptx.chart.data import CategoryChartData
-from pptx.enum.chart import XL_CHART_TYPE
-
-prs = Presentation('.agents/skills/adata-pptx/adata-template.pptx')
-layout = prs.slide_layouts[5]   # 只有標題 — Title Only
-slide  = prs.slides.add_slide(layout)
-slide.shapes.title.text = "Q4 Sales Comparison"
-
-chart_data = CategoryChartData()
-chart_data.categories = ['Q1', 'Q2', 'Q3', 'Q4']
-chart_data.add_series('ADATA',      (120, 145, 130, 180))
-chart_data.add_series('Competitor', ( 90, 110, 105, 130))
-
-# Position chart below title placeholder (top ≈ 1.5")
-chart_frame = slide.shapes.add_chart(
-    XL_CHART_TYPE.COLUMN_CLUSTERED,
-    Inches(0.5), Inches(1.5), Inches(9.0), Inches(5.0),
-    chart_data)
-chart = chart_frame.chart
-
-# Apply ADATA accent colors to series
-for i, series in enumerate(chart.series):
-    series.format.fill.solid()
-    series.format.fill.fore_color.rgb = ADATA_ACCENT[i % len(ADATA_ACCENT)]
-
-# Hide chart title — the slide title is sufficient
-chart.has_title = False
-
-prs.save('output.pptx')
-```
-
-### Supported chart types
-
-| Chart type | `XL_CHART_TYPE` constant | Best for |
-|---|---|---|
-| Clustered column | `COLUMN_CLUSTERED` | Category comparisons |
-| Stacked column (%) | `COLUMN_STACKED_100` | Composition breakdown |
-| Clustered bar | `BAR_CLUSTERED` | Long category labels |
-| Line | `LINE` | Trends over time |
-| Pie | `PIE` | Parts-of-whole (≤ 6 segments) |
-| Scatter | `XY_SCATTER` | Correlation / distribution |
-
-### Chart design rules
-
-- **Series colors:** cycle `ADATA_ACCENT` list (`blue → green → orange → magenta`)
-- **Chart title:** `chart.has_title = False` — slide title serves as the chart title
-- **Plot background:** white (`#FFFFFF`) or transparent — never dark navy
-- **Axis labels:** minimum 12 pt; use ADATA Navy (`#0E2841`) for text
-- **Legend:** bottom or right; hide when only one series
-- **Max series per chart:** 5 (readability)
-- **Gridlines:** light gray only; remove vertical gridlines for column/bar charts
-- **Chart placeholder text:** `chart.has_title = False` already suppresses the embedded title
+1. 以模板為起點：`adata-template/adata-template.pptx`
+2. Analyze template with `thumbnail.py`
+3. Unpack → 調整投影片結構 → 編輯內容 → clean → pack
 
 ---
 
-## Image Slides
+## Source Conversion Mode（保留內容，只改樣式）
 
-Images are placed on content slides using `add_picture()`.  
-Always position below the title placeholder (top ≥ 1.4") with at least 0.5" margin from all edges.
+**當 source 是 PPTX 檔案時，不重建投影片 — 直接在原始 XML 上套用 ADATA 品牌樣式。**
 
-### Adding an image to a content slide
+### 目標
 
-```python
-from pptx import Presentation
-from pptx.util import Inches
+| 修改項目 | 方式 |
+|---------|------|
+| 主題色彩 | 替換 `ppt/theme/theme1.xml`（一次修改，全部生效） |
+| 標題字型與顏色 | 自動偵測每張投影片的標題文字，套用 Arial Black + 對應顏色 |
+| 標題偵測方式 | ① `<p:ph type="title/ctrTitle">` 佔位符（最優先）② 位於投影片上方 30% 且有實質文字的文字框（位置啟發） |
+| 副標題 | `<p:ph type="subTitle/body">` 套用相同顏色規則 |
+| 顏色規則 | 深色背景頁：白色 `#FFFFFF`；淺色背景頁：海軍藍 `#0E2841` |
+| 投影片背景 | 封面/章節頁：`#0E2841`；內容頁：白色/`#E8E8E8` |
+| 硬編碼顏色 | 掃描 `<a:srgbClr>` 並對應替換為最近的 ADATA 品牌色 |
 
-prs = Presentation('.agents/skills/adata-pptx/adata-template.pptx')
-layout = prs.slide_layouts[5]   # 只有標題 — Title Only
-slide  = prs.slides.add_slide(layout)
-slide.shapes.title.text = "Product Overview"
+### 保留項目（不動）
 
-# Add image — auto-width preserves aspect ratio
-pic = slide.shapes.add_picture(
-    'product.png',
-    Inches(0.5), Inches(1.5),
-    height=Inches(5.0))
+- 所有投影片的文字內容、段落結構
+- 圖片、圖表、表格位置與尺寸
+- 投影片張數與順序
+- 動畫與轉場（若有）
 
-# Center horizontally
-pic.left = int((prs.slide_width - pic.width) / 2)
+### 工作流程
 
-prs.save('output.pptx')
+```
+1. 解壓縮 source
+   python scripts/office/unpack.py source.pptx source-unpacked/
+
+2. 解壓縮 ADATA 模板（取得 theme 參考）
+   python scripts/office/unpack.py adata-template/adata-template.pptx adata-unpacked/
+
+3. 替換主題檔（若 source 主題不是 ADATA；若已是 ADATA 主題則跳過）
+   cp adata-unpacked/ppt/theme/theme1.xml source-unpacked/ppt/theme/theme1.xml
+
+4. 執行轉換腳本
+
+   若 source 已有 ADATA 背景圖片（blipFill），只替換顏色與字型：
+   python scripts/convert_to_adata.py source-unpacked/ --colors-only
+
+   若 source 背景是純色或無 ADATA 背景（從零轉換）：
+   python scripts/convert_to_adata.py source-unpacked/ --dark-slides 1 44
+
+5. 人工修正（腳本無法處理的細節）
+   - 檢查每張投影片的背景分類是否正確（深色/淺色）
+   - 修正過長標題（超出文字框）
+   - 修正對比不足的文字顏色
+
+6. Clean → Pack
+   python scripts/clean.py source-unpacked/
+   python scripts/office/pack.py source-unpacked/ output.pptx --original source.pptx
 ```
 
-### Pre-compressing with Pillow (images > 2 MB)
+### 背景分類規則
 
-```python
-from PIL import Image
-import io
+| 投影片類型 | 背景色 | 文字色 |
+|-----------|--------|--------|
+| 封面（第 1 張） | `#0E2841` | `#FFFFFF` |
+| 章節標題（Section Divider） | `#0E2841` + 章節強調色裝飾 | `#FFFFFF` |
+| 內容投影片 | 白色或 `#E8E8E8` | `#0E2841` |
+| 結尾投影片（最後 1 張） | `#0E2841` | `#FFFFFF` |
 
-img = Image.open('large_photo.jpg')
-img.thumbnail((1920, 1080))            # Resize to max 1920×1080
-buf = io.BytesIO()
-img.save(buf, format='JPEG', quality=85, optimize=True)
-buf.seek(0)
-pic = slide.shapes.add_picture(buf, Inches(0.5), Inches(1.5), height=Inches(5))
-```
+章節強調色必須依循 **Blue `#5097FF` → Green `#19C711` → Orange `#FF9000` → Magenta `#FF47FF`** 順序，不可跳序。
 
-### Image rules
+### 顏色對應表（硬編碼色 → ADATA）
 
-- **Position:** top ≥ 1.4" (below title); 0.5" margin from all slide edges
-- **Max size:** slide is 10" × 7.5" — keep images within bounds; max height ≈ 5.5"
-- **Format:** PNG (supports transparency); JPEG for photos
-- **Compression:** pre-compress with Pillow if source file > 2 MB
-- **Paths:** use `os.path.abspath()` to avoid file-not-found errors in scripts
+| 原始色類型 | 替換為 |
+|-----------|--------|
+| 任何深藍底色 | `#0E2841` |
+| 任何亮藍強調色 | `#5097FF` |
+| 任何亮綠強調色 | `#19C711` |
+| 任何橘色強調色 | `#FF9000` |
+| 任何洋紅/紫強調色 | `#FF47FF` |
+| 深色背景上的文字 | `#FFFFFF` |
+| 淺色背景上的標題文字 | `#0E2841` |
+
+> **注意**：腳本只替換確定是背景或裝飾用的顏色；圖片內的顏色無法修改。
+
+### convert_to_adata.py 腳本
+
+位於 `scripts/convert_to_adata.py`，執行以下操作：
+
+1. 掃描所有 `ppt/slides/slide*.xml`
+2. **自動偵測每張投影片的標題形狀**：
+   - 優先：`<p:ph type="title">` / `type="ctrTitle"` 佔位符
+   - 備選：位於投影片高度前 30%（y < 2057400 EMU）且含有實質文字的文字框
+   - 略過：頁腳、日期、投影片編號佔位符
+3. 將偵測到的標題形狀套用 **Arial Black** 字型 + 正確文字顏色
+   - 深色背景頁 → `#FFFFFF`；淺色背景頁 → `#0E2841`
+4. 同樣處理副標題佔位符（`subTitle` / `body idx=1`）
+5. 批次替換所有硬編碼的非 ADATA 強調色（見顏色對應表）
+6. 視模式調整投影片背景（`--colors-only` 模式下略過）
+7. 輸出修改摘要（修改了幾張投影片、幾處顏色、幾處樣式）
+
+**閱讀 [editing.md → Source Conversion Details](editing.md#source-conversion-details) 取得腳本完整說明與手動覆寫指引。**
 
 ---
 
-## Bulk Generation from Data
+## 內容設計規則
 
-Generate multiple ADATA content slides from CSV or JSON data.  
-**Always** start from the ADATA template — never use a blank `Presentation()`.
+### 背景
 
-### From CSV (pandas)
+- **深色背景**（`#0E2841`）：封面、章節標題、結尾投影片
+- **淺色背景**：內容投影片（由模板版面配置控制）
 
-```python
-import pandas as pd
-from pptx import Presentation
-from pptx.util import Inches, Pt
+### 內容密度
 
-prs    = Presentation('.agents/skills/adata-pptx/adata-template.pptx')
-layout = prs.slide_layouts[5]   # 只有標題 — Title Only
+- 每張內容投影片最多 **6 個項目**，每項最多 **15 字**
+- 每張章節標題最多 **3 個副標題**，每項最多 **8 字**
 
-df = pd.read_csv('products.csv')   # expected columns: name, spec, speed, capacity
+### 章節一致性
 
-for _, row in df.iterrows():
-    slide = prs.slides.add_slide(layout)
-    slide.shapes.title.text = row['name']
+- 內容投影片標題的強調色必須與其對應章節標題顏色相同
+- 所有標題使用 **Arial Black**，不得替換
 
-    # Subtitle placeholder (idx 1)
-    for ph in slide.placeholders:
-        if ph.placeholder_format.idx == 1:
-            ph.text = row['spec']
-            break
+### 內容呈現優先順序
 
-    # Body text box for additional specs
-    txBox = slide.shapes.add_textbox(Inches(0.5), Inches(2.2), Inches(9), Inches(4))
-    tf    = txBox.text_frame
-    tf.word_wrap = True
-    p = tf.add_paragraph()
-    p.text = f"Speed: {row['speed']}   Capacity: {row['capacity']}"
+優先使用視覺化結構，而非純文字：
 
-prs.save('product-catalog.pptx')
-```
+| 內容類型 | 建議呈現方式 |
+|---------|------------|
+| 順序步驟、流程、工作流程 | 流程圖（帶箭頭） |
+| 分支邏輯、決策樹 | 流程圖（含決策節點） |
+| 多項目或屬性比較 | 表格 |
+| 結構化資料、規格、功能列表 | 表格 |
+| 簡單列舉（≤ 6 個簡短項目） | 項目符號清單 |
+| 敘述性或說明性文字 | 純段落 |
+| 時間序列趨勢數據 | 折線圖 |
+| 類別數字比較 | 長條圖 / 直條圖 |
+| 整體佔比分析（≤ 6 段） | 圓餅圖 / 環形圖 |
 
-### From JSON
+### 表格樣式
 
-```python
-import json
-from pptx import Presentation
+- 標題列：深海軍藍底（`#0E2841`）、白色粗體文字
+- 資料列：白色 / 淺灰（`#E8E8E8`）交替，海軍藍文字
+- 欄寬：依投影片寬度平均分配
 
-prs    = Presentation('.agents/skills/adata-pptx/adata-template.pptx')
-layout = prs.slide_layouts[5]
+### 圖表樣式
 
-with open('data.json', encoding='utf-8') as f:
-    records = json.load(f)
-
-for item in records:
-    slide = prs.slides.add_slide(layout)
-    slide.shapes.title.text = item['title']
-    # ... populate remaining placeholders
-
-prs.save('output.pptx')
-```
-
-### Bulk generation rules
-
-- **Template:** always `Presentation('adata-template.pptx')` — never `Presentation()`
-- **Layout:** use Layout 5 (`只有標題`) for data-driven content slides
-- **Max items per slide:** ≤ 6 body items — split large records into additional slides
-- **Large datasets:** split into multiple PPTX files if slide count > 30
-- **Font / color:** set titles to Arial Black; body inherits template defaults
-- **Dependencies:** `pip install pandas` (CSV), `pip install openpyxl` (Excel `.xlsx`)
+- 系列色彩循環使用章節強調色（藍 `#5097FF` → 綠 `#19C711` → 橘 `#FF9000` → 洋紅 `#FF47FF`）
+- 繪圖背景：白色或透明，**不使用深海軍藍**
+- 座標軸標籤：最小 12pt，使用 `#0E2841`
+- 最多 5 個系列（可讀性限制）
 
 ---
 
-## Markdown Content File Format
+## ADATA 設計禁止事項
 
-Create a `content.md` file as the **single source of truth** before building the PPT. The markdown structure maps directly to ADATA slide types.
-
-### Format
-
-```markdown
----
-title:
-  - Line 1
-  - Line 2
-subtitle: Presentation subtitle
-date: 2026/04/24
----
-
-## Section Title
-- Subtopic A
-- Subtopic B
-- Subtopic C
-
-### Slide Title
-> Slide subtitle
-
-- Bullet item 1
-- Bullet item 2
-- Bullet item 3
-
-### Another Slide
-> Another subtitle
-
-1. Numbered item 1
-2. Numbered item 2
-3. Numbered item 3
-```
-
-### Mapping Rules
-
-| Markdown Element | ADATA Slide Element | PowerPoint XML |
-|-----------------|---------------------|----------------|
-| YAML `title` (list) | Cover title (multi-line) | `<a:br/>` between lines |
-| YAML `subtitle` | Cover subtitle | — |
-| YAML `date` | Cover date (defaults to today) | — |
-| `## Heading` | Section divider slide | slide 3/5/7/9 |
-| `- item` after `##` | Divider subtitles (max 3) | — |
-| `### Heading` | Content slide title | slide 4/6/8/10 or duplicated |
-| `> text` after `###` | Content slide subtitle | — |
-| `- item` in body | Bullet point | `<a:buChar char="&#x2022;"/>` |
-| `1. item` in body | Numbered item | `<a:buAutoNum type="arabicPeriod"/>` |
-| Plain text line | Plain paragraph (no bullet) | — |
-
-> **Density rule:** A `###` slide must have **≤ 6 body items**. If your outline produces more, add a second `###` slide for the overflow. A `##` divider must have **≤ 3 subtitles**.
-
-### Conversion
-
-```bash
-python .agents/skills/adata-pptx/scripts/md2json.py content.md slides.json
-```
-
-The script outputs:
-- `slides.json` — ready for `edit_slides.py`
-- Duplication commands — `add_slide.py` commands to run during structural edits
-- Deletion info — unused section pairs to remove if fewer than 4 sections
+- **禁止**更改品牌色彩或使用模板外的色彩
+- **禁止**替換 Arial Black 字型
+- **禁止**在深色背景上使用深色文字（對比不足）
+- **禁止**在內容投影片使用深海軍藍（`#0E2841`）作為背景
+- **禁止**章節強調色亂序使用（必須依 Blue → Green → Orange → Magenta 循環）
+- **禁止**在標題下方加裝飾性底線
+- **禁止**每張投影片使用相同版面（應善用章節標題、表格、圖表等多樣版面）
+- **禁止**在模板既有版面上覆蓋字型大小
 
 ---
 
@@ -594,115 +276,113 @@ The script outputs:
 
 **Assume there are problems. Your job is to find them.**
 
+Your first render is almost never correct. Approach QA as a bug hunt, not a confirmation step. If you found zero issues on first inspection, you weren't looking hard enough.
+
 ### Content QA
 
 ```bash
-python -m markitdown $FILENAME
+python -m markitdown output.pptx
 ```
 
-Check for placeholder text still present:
+Check for missing content, typos, wrong order.
+
+**When using templates, check for leftover placeholder text:**
 
 ```bash
-python -m markitdown $FILENAME | grep -iE "Main Title|Section Title|Subtitle|xxxx|lorem"
+python -m markitdown output.pptx | grep -iE "xxxx|lorem|ipsum|this.*(page|slide).*layout"
 ```
 
-If grep returns results, replace them before declaring success.
+If grep returns results, fix them before declaring success.
 
 ### Visual QA
 
-Convert to images and inspect:
+**⚠️ USE SUBAGENTS** — even for 2-3 slides. You've been staring at the code and will see what you expect, not what's there. Subagents have fresh eyes.
 
-```bash
-python .agents/skills/adata-pptx/scripts/office/soffice.py --headless --convert-to pdf $FILENAME
-pdftoppm -jpeg -r 150 output.pdf slide
-```
-
-**⚠️ USE SUBAGENTS** for visual inspection. Prompt:
+Convert slides to images (see [Converting to Images](#converting-to-images)), then use this prompt:
 
 ```
-Visually inspect these ADATA presentation slides. Assume there are issues — find them.
+Visually inspect these slides. Assume there are issues — find them.
 
-ADATA-specific checks:
-- Section accent colors match between divider and content slides
-- Arial Black used for titles (check font rendering)
-- Dark backgrounds on cover/dividers, appropriate backgrounds on content slides
-- Section numbering/color scheme is consistent
-
-General checks:
-- Overlapping elements or text overflow
-- Placeholder text still present (e.g., "Main Title", "Section Title", "Subtitle")
+Look for:
+- Overlapping elements (text through shapes, lines through words, stacked elements)
+- Text overflow or cut off at edges/box boundaries
+- Decorative lines positioned for single-line text but title wrapped to two lines
+- Source citations or footers colliding with content above
+- Elements too close (< 0.3" gaps) or cards/sections nearly touching
+- Uneven gaps (large empty area in one place, cramped in another)
 - Insufficient margin from slide edges (< 0.5")
-- Low-contrast text
-- Uneven spacing between content blocks
+- Columns or similar elements not aligned consistently
+- Low-contrast text (e.g., light gray text on cream-colored background)
+- Low-contrast icons (e.g., dark icons on dark backgrounds without a contrasting circle)
+- Text boxes too narrow causing excessive wrapping
+- Leftover placeholder content
 
 For each slide, list issues or areas of concern, even if minor.
+
+Read and analyze these images:
+1. /path/to/slide-01.jpg (Expected: [brief description])
+2. /path/to/slide-02.jpg (Expected: [brief description])
+
+Report ALL issues found, including minor ones.
 ```
 
 ### Verification Loop
 
-1. Generate → convert to images → inspect
-2. List all issues (if none found, look harder)
-3. Fix → re-inspect affected slides
-4. Repeat until clean pass
+1. Generate slides → Convert to images → Inspect
+2. **List issues found** (if none found, look again more critically)
+3. Fix issues
+4. **Re-verify affected slides** — one fix often creates another problem
+5. Repeat until a full pass reveals no new issues
+
+**Do not declare success until you've completed at least one fix-and-verify cycle.**
 
 ---
 
 ## Converting to Images
 
+### Windows (use PowerPoint COM automation)
+
+`soffice.py` relies on `socket.AF_UNIX` and **fails on Windows**. Use PowerPoint COM instead:
+
+```python
+import win32com.client, os, pathlib
+
+pptx_path = str(pathlib.Path("output.pptx").resolve())
+out_dir    = str(pathlib.Path("slides_qa").resolve())
+os.makedirs(out_dir, exist_ok=True)
+
+ppt = win32com.client.Dispatch("PowerPoint.Application")
+ppt.Visible = 1
+prs = ppt.Presentations.Open(pptx_path, ReadOnly=True, Untitled=False, WithWindow=False)
+for i, slide in enumerate(prs.Slides, 1):
+    slide.Export(os.path.join(out_dir, f"slide-{i:02d}.jpg"), "JPG", 1920, 1080)
+prs.Close()
+ppt.Quit()
+```
+
+Save as `export_slides.py` and run with `python export_slides.py`.
+
+### Linux / macOS (LibreOffice)
+
 ```bash
-python .agents/skills/adata-pptx/scripts/office/soffice.py --headless --convert-to pdf $FILENAME
+python scripts/office/soffice.py --headless --convert-to pdf output.pptx
 pdftoppm -jpeg -r 150 output.pdf slide
 ```
 
----
+This creates `slide-01.jpg`, `slide-02.jpg`, etc.
 
-## CJK / Codec Pitfalls
+To re-render specific slides after fixes:
 
-The ADATA template was authored in zh-TW PowerPoint. Two files contain Chinese metadata that **will cause errors** on systems using cp950 or other non-UTF-8 default encodings.
-
-> **These fixes are applied automatically by `unpack.py`** when unpacking any `.pptx` file. No manual intervention needed.
-
-### 1. `docProps/app.xml` — cp950 codec error
-
-`pack.py` validates XML files by decoding them with the system default codec. Chinese strings in `app.xml` (e.g. `寬螢幕`, `使用字型`, `佈景主題`, `投影片標題`, `PowerPoint 簡報`) can fail with:
-
+```bash
+pdftoppm -jpeg -r 150 -f N -l N output.pdf slide-fixed
 ```
-'cp950' codec can't decode byte 0x9e in position 366: illegal multibyte sequence
-```
-
-`unpack.py` replaces these with ASCII equivalents (`Widescreen`, `Fonts Used`, `Theme`, `Slide Titles`, `PowerPoint Presentation`, `Office Theme`) automatically.
-
-The `<Slides>` count is **automatically updated** by `edit_slides.py` — no manual step needed.
-
-### 2. `[Content_Types].xml` — template content type
-
-Because the template is a `.potx`, the content type is `presentationml.template.main+xml`. This causes `markitdown` (and some PPTX readers) to reject the output `.pptx` file.
-
-`unpack.py` converts this to `presentationml.presentation.main+xml` automatically.
-
-### 3. Chinese text in slide XML
-
-When inserting Chinese characters into slide XML, use **XML numeric character references** (`&#x4E2D;` for 中) to avoid encoding issues entirely. The XML declaration is `encoding="utf-8"`, so literal UTF-8 also works — but entity encoding is safer when building XML strings in Python.
-
----
-
-## PowerShell Inline Python Pitfall
-
-When running Python code inline with `python -c "..."` in PowerShell, **regex patterns containing backslash sequences** (`\d+`, `\s+`, etc.) will be misinterpreted by the shell. PowerShell strips or reinterprets `\d`, `\s`, etc. before Python sees them.
-
-**Symptom:** `CommandNotFoundException` errors like `\d+ : 無法辨識 '\d+' 詞彙`.
-
-**Fix:** Always write a temporary `.py` script file and run it with `python script.py` instead of using `python -c` for any code containing regex patterns.
 
 ---
 
 ## Dependencies
 
-- `pip install "markitdown[pptx]"` — text extraction
-- `pip install Pillow` — thumbnail grids + image pre-compression
-- `pip install pandas` — bulk generation from CSV / Excel
-- `pip install openpyxl` — Excel `.xlsx` support for bulk generation
-- LibreOffice (`soffice`) — PDF conversion (via `.agents/skills/adata-pptx/scripts/office/soffice.py`)
-- Poppler (`pdftoppm`) — PDF to images
-
-> For general python-pptx techniques (advanced chart formatting, SmartArt, animations), refer to the `pptx` skill. All such techniques must be applied through the ADATA template with ADATA brand colors and layouts.
+- `pip install "markitdown[pptx]"` - text extraction
+- `pip install Pillow` - thumbnail grids
+- `npm install -g pptxgenjs` - creating from scratch
+- LibreOffice (`soffice`) - PDF conversion (auto-configured for sandboxed environments via `scripts/office/soffice.py`)
+- Poppler (`pdftoppm`) - PDF to images

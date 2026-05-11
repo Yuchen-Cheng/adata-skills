@@ -82,10 +82,9 @@ def create_slide_from_layout(unpacked_dir: Path, layout_file: str) -> None:
     rid = _add_to_presentation_rels(unpacked_dir, dest)
 
     next_slide_id = _get_next_slide_id(unpacked_dir)
-    _insert_slide_id(unpacked_dir, next_slide_id, rid)
 
     print(f"Created {dest} from {layout_file}")
-    print(f'Added to presentation.xml: <p:sldId id="{next_slide_id}" r:id="{rid}"/>')
+    print(f'Add to presentation.xml <p:sldIdLst>: <p:sldId id="{next_slide_id}" r:id="{rid}"/>')
 
 
 def duplicate_slide(unpacked_dir: Path, source: str) -> None:
@@ -123,10 +122,9 @@ def duplicate_slide(unpacked_dir: Path, source: str) -> None:
     rid = _add_to_presentation_rels(unpacked_dir, dest)
 
     next_slide_id = _get_next_slide_id(unpacked_dir)
-    _insert_slide_id(unpacked_dir, next_slide_id, rid)
 
     print(f"Created {dest} from {source}")
-    print(f'Added to presentation.xml: <p:sldId id="{next_slide_id}" r:id="{rid}"/>')
+    print(f'Add to presentation.xml <p:sldIdLst>: <p:sldId id="{next_slide_id}" r:id="{rid}"/>')
 
 
 def _add_to_content_types(unpacked_dir: Path, dest: str) -> None:
@@ -162,15 +160,6 @@ def _get_next_slide_id(unpacked_dir: Path) -> int:
     pres_content = pres_path.read_text(encoding="utf-8")
     slide_ids = [int(m) for m in re.findall(r'<p:sldId[^>]*id="(\d+)"', pres_content)]
     return max(slide_ids) + 1 if slide_ids else 256
-
-
-def _insert_slide_id(unpacked_dir: Path, slide_id: int, rid: str) -> None:
-    """Insert <p:sldId> entry into presentation.xml <p:sldIdLst>."""
-    pres_path = unpacked_dir / "ppt" / "presentation.xml"
-    pres_content = pres_path.read_text(encoding="utf-8")
-    new_entry = f'    <p:sldId id="{slide_id}" r:id="{rid}"/>\n  '
-    pres_content = pres_content.replace("</p:sldIdLst>", f"{new_entry}</p:sldIdLst>")
-    pres_path.write_text(pres_content, encoding="utf-8")
 
 
 def parse_source(source: str) -> tuple[str, str | None]:
