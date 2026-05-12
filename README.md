@@ -23,27 +23,6 @@ npx skills add Yuchen-Cheng/adata-skills@adata-pptx -g
 npx skills add Yuchen-Cheng/adata-skills --list
 ```
 
-## Repository Structure
-
-```
-adata-skills/
-├── README.md
-├── .gitignore
-└── adata-pptx/                     # Each skill is a top-level directory
-    ├── SKILL.md                    # Required — metadata + instructions
-    ├── assets/
-    │   └── backgrounds/            # 11 ADATA background JPGs
-    ├── layouts/
-    │   ├── slides/                 # 5 structural slide layouts
-    │   └── patterns/               # 16 body content patterns
-    ├── references/                 # Template styles, editing guides, pptxgenjs docs
-    └── scripts/                    # PPTX utility scripts (add_slide, pack, unpack, etc.)
-```
-
-Each skill lives in its own **top-level directory** containing a `SKILL.md` with YAML frontmatter (`name` and `description` fields). See the [Skills documentation](https://skills.sh/) for authoring details.
-
-
-
 ## License
 
 MIT
