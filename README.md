@@ -6,7 +6,7 @@ A collection of agent skills for [Claude Code](https://docs.anthropic.com/en/doc
 
 | Skill | Description | Platform |
 |---|---|---|
-| [excel-to-markdown](excel-to-markdown/) | Convert Excel worksheets to Markdown — extracts flowcharts as Mermaid diagrams and table data | Windows |
+| [adata-pptx](adata-pptx/) | Create ADATA (威剛科技) branded PowerPoint presentations using the official ADATA design system | Any |
 
 ## Installation
 
@@ -14,10 +14,10 @@ Install a specific skill with the [Skills CLI](https://skills.sh/):
 
 ```bash
 # Install a single skill
-npx skills add Yuchen-Cheng/adata-skills@excel-to-markdown
+npx skills add Yuchen-Cheng/adata-skills@adata-pptx
 
 # Install globally (user-level)
-npx skills add Yuchen-Cheng/adata-skills@excel-to-markdown -g
+npx skills add Yuchen-Cheng/adata-skills@adata-pptx -g
 
 # List all available skills in this repo
 npx skills add Yuchen-Cheng/adata-skills --list
@@ -29,13 +29,15 @@ npx skills add Yuchen-Cheng/adata-skills --list
 adata-skills/
 ├── README.md
 ├── .gitignore
-├── excel-to-markdown/      # Each skill is a top-level directory
-│   ├── SKILL.md            # Required — metadata + instructions
-│   └── scripts/            # Bundled scripts
-│       └── excel_to_markdown.py
-└── <future-skill>/
-    ├── SKILL.md
-    └── ...
+└── adata-pptx/                     # Each skill is a top-level directory
+    ├── SKILL.md                    # Required — metadata + instructions
+    ├── assets/
+    │   └── backgrounds/            # 11 ADATA background JPGs
+    ├── layouts/
+    │   ├── slides/                 # 5 structural slide layouts
+    │   └── patterns/               # 16 body content patterns
+    ├── references/                 # Template styles, editing guides, pptxgenjs docs
+    └── scripts/                    # PPTX utility scripts (add_slide, pack, unpack, etc.)
 ```
 
 Each skill lives in its own **top-level directory** containing a `SKILL.md` with YAML frontmatter (`name` and `description` fields). See the [Skills documentation](https://skills.sh/) for authoring details.
