@@ -42,15 +42,7 @@ adata-skills/
 
 Each skill lives in its own **top-level directory** containing a `SKILL.md` with YAML frontmatter (`name` and `description` fields). See the [Skills documentation](https://skills.sh/) for authoring details.
 
-## Adding a New Skill
 
-1. Create a new directory at the repo root:
-   ```bash
-   npx skills init <skill-name>
-   ```
-2. Edit `<skill-name>/SKILL.md` — add a `name`, `description`, and instructions.
-3. (Optional) Add `scripts/`, `references/`, or `assets/` subdirectories for bundled resources.
-4. Commit and push.
 
 ## License
 
