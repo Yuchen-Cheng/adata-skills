@@ -1,4 +1,4 @@
-# Layout 10 — Pattern E: Table Layout
+# Pattern — Table Layout
 
 **When to use:** Structured task/action tables with 3–4 columns — e.g., `#` | 工作內容 | 頻率 | AI方案.
 
@@ -84,4 +84,4 @@ ROWS.forEach((row, i) => {
 
 - Header fill = section accent colour; header text = white, 13 pt bold.
 - Column widths can be adjusted — ensure all `x + w` values still sum to `≤ 9.5` to stay in the safe zone.
-- Use Pattern F (note band) at `y=4.65` for caveats or update notes at the bottom of the slide.
+- Use the Note Band pattern at `y=4.65` for caveats or update notes at the bottom of the slide.

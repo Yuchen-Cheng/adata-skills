@@ -1,8 +1,6 @@
-# Layout 07 — Pattern B: Stat Cards (4 across)
+# Pattern — Stat Cards (4 across)
 
-**When to use:** Showing 3–4 key metrics side by side in a horizontal row.
-
-Place inside the body area of a standard content slide (`y ≈ 2.4`, below the subtitle).
+**When to use:** Showing 3–4 key metrics side by side in a horizontal row. Place inside the body area of a standard content slide (`y ≈ 2.4`, below the subtitle).
 
 ## Visual Structure
 

@@ -1,8 +1,8 @@
-# Layout 09 — Pattern D: Department / Unit Cards Grid (2 × 3)
+# Pattern — Department / Unit Cards Grid (2 × 3)
 
 **When to use:** Comparing multiple teams, units, or items that each have a count, sub-breakdown, and short description. Renders 6 cards in two rows of three.
 
-Best combined with Pattern A (section tag header) so the body area starts high enough to fit both rows.
+Best combined with the Section Tag Header pattern so the body area starts high enough to fit both rows.
 
 ## Visual Structure
 
@@ -75,6 +75,6 @@ addUnitCard(slide, { x: 6.5, y: 3.45, deptName: "部門 F", count: 15, desc: "�
 
 ## Notes
 
-- When using this pattern, prefer Pattern A (section tag header) so the body starts at `y ≈ 1.7` and both card rows fit.
+- When using this pattern, prefer the Section Tag Header pattern so the body starts at `y ≈ 1.7` and both card rows fit.
 - Replace accent colours with the current section's accent colour; different accents per card are allowed to distinguish units.
 - The sub-label "個項目" can be replaced with any short unit (e.g., "件", "tasks", "項作業").

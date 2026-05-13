@@ -1,13 +1,12 @@
-# Layout 13 — Pattern H: Org Chart / Hierarchy
+# Pattern — Org Chart / Hierarchy
 
-## When to Use
-組織架構圖或層級關係圖，適合呈現「專案團隊組成」、「負責人 → 子團隊 → 成員單位」的三層層級。頂部有情境說明橫幅，底部一排 SPOC 卡片（最多 5 個）。
+**When to use:** Organization structure or hierarchy diagram. Ideal for "project team composition", "sponsor → sub-teams → team members" three-level hierarchies. Context banner at top; row of up to 5 SPOC cards at bottom.
 
 ## Visual Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Section Tag Header (Pattern A)                                   │
+│  Section Tag Header                                               │
 │  標題文字 / Subtitle                                              │
 ├──────────────────────────────────────────────────────────────────┤
 │  [   情境說明橫幅（背景說明或注意事項）                    ]    │

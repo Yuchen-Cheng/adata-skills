@@ -1,13 +1,12 @@
-# Layout 18 — Pattern M: Numbered Step List
+# Pattern — Numbered Step List
 
-## When to Use
-序號式行動清單，適合呈現「逐步推進的行動計畫」、「七步驟落地」、「執行優先序」。每行含：彩色圓角數字徽章 + 時程標籤 + 粗體標題 + 說明文字。最多 7 個步驟可完整填滿投影片。
+**When to use:** Numbered action plan. Ideal for "step-by-step rollout plan", "seven-step execution", "action priority sequence". Each row: coloured rounded-corner number badge + timeline tag + bold title + description. Up to 7 steps fit neatly on a slide.
 
 ## Visual Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Section Tag Header (Pattern A)                                   │
+│  Section Tag Header                                               │
 │  標題文字 / Subtitle                                              │
 │                                                                    │
 │  ┌──┐  本月內  步驟一標題（加粗、強調色）                        │
@@ -95,5 +94,5 @@ STEPS.forEach(({ num, time, title, desc }, idx) => {
 - 7 個步驟時總高度約 3.6"，從 `y=2.0` 可完整呈現
 - 步驟少於 7 個時可增大行間距（`STEP_H + 0.1` 至 `+0.2`）
 - `time` 欄位可改為里程碑（`M1`）、優先級（`P1`）等任何短標籤
-- 若步驟無順序性，可改用 Pattern D（Unit Grid）呈現
+- 若步驟無順序性，可改用 Unit Grid pattern 呈現
 - 數字徽章顏色可按時程分段（如前 3 個用 accent、後 4 個用灰色）

@@ -1,13 +1,12 @@
-# Layout 17 — Pattern L: Multi-Phase Roadmap Grid
+# Pattern — Multi-Phase Roadmap Grid
 
-## When to Use
-時間軸 × 階段的網格式 Roadmap，適合呈現「多階段 × 多季度」的推進計畫。列 = 階段（Phase），欄 = 時間點（季度/半年）。欄標頭列在底部黑底白字，左側各 Phase 標籤以各自顏色填色。
+**When to use:** Time-axis × phase grid-based roadmap. Ideal for "multi-phase × multi-quarter" rollout plans. Rows = phases; columns = time points (quarters/half-years). Column header row at bottom (dark background, white text); left-side phase labels colour-coded by phase.
 
 ## Visual Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Section Tag Header (Pattern A)                                   │
+│  Section Tag Header                                               │
 │  標題文字 / Subtitle                                              │
 │         ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
 │         │ Q2 2026  │  │ Q3 2026  │  │ Q4 2026  │  │ 2027 H1  │ │

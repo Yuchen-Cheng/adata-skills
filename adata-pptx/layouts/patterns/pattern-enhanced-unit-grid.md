@@ -1,13 +1,12 @@
-# Layout 21 — Pattern P: Enhanced Unit Grid with Breakdown Bar
+# Pattern — Enhanced Unit Grid with Breakdown Bar
 
-## When to Use
-Pattern D（Unit Grid）的強化版：每張部門/單位卡片內增加 **ABCD 比例橫條** 與 **各類計數 legend**，在一眼即可看出「各單位的結構分佈」。適合「多單位綜合概覽 + 分類組成一頁呈現」的場景。
+**When to use:** Enhanced version of the Unit Grid pattern: each department/unit card adds an **ABCD ratio horizontal bar** + **category count legend**. See "unit structure distribution" at a glance. Perfect for "multi-unit overview + category composition in one view" scenarios.
 
 ## Visual Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Section Tag Header (Pattern A)                                   │
+│  Section Tag Header                                               │
 │  標題文字 / Subtitle                                              │
 │                                                                    │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
@@ -150,6 +149,6 @@ addEnhancedUnitCard(slide, pres, {
 ## Notes
 - `breakdown` 陣列順序固定為 [A, B, C, D]；各 `color` 建議對應固定類別色（A=灰, B=accent, C=橙, D=紫）
 - `total === 0` 時橫條不繪製（已在程式碼中處理）
-- 與 Pattern D 的差異：Pattern D 無比例橫條，適合純數量展示；Pattern P 適合需要展示組成結構的場景
+- 與 Unit Grid 的差異：Unit Grid 無比例橫條，適合純數量展示；Enhanced Unit Grid 適合需要展示組成結構的場景
 - 函式 `addEnhancedUnitCard` 可重複調用，不限制 6 張；3 張時只調用上列，調整 `y: 2.7` 置中
 - `accent` 每個單位可設定不同顏色，也可全部統一使用同一 section accent

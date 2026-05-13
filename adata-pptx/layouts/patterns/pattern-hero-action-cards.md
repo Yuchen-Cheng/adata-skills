@@ -1,13 +1,12 @@
-# Layout 19 — Pattern N: Hero Statement + Action Cards
+# Pattern — Hero Statement + Action Cards
 
-## When to Use
-「結論頁」或「行動召喚頁」的主力 pattern。上半部為大型 hero callout 框（一句話核心結論），下半部為 3 個行動卡片（含序號徽章 + 標題 + 說明）。適合：簡報結尾總結、月報行動清單、專案啟動頁。
+**When to use:** "Conclusion" or "call-to-action" page. Upper half: large hero callout box (one-sentence core conclusion); lower half: 3 action cards (numbered badge + title + description). Perfect for: presentation closing summary, monthly report action items, project kick-off page.
 
 ## Visual Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Section Tag Header (Pattern A)                                   │
+│  Section Tag Header                                               │
 │  標題文字 / Subtitle                                              │
 │                                                                    │
 │  ┌──────────────────────────────────────────────────────────┐    │
@@ -125,5 +124,5 @@ CARDS.forEach(({ num, numColor, title, desc }, idx) => {
 - Hero callout 框高度 `h: 1.35` 可容納 1–2 行大文字；文字超出時縮小 `fontSize: 16`
 - 版本徽章（`v1.0 更新`）可省略，刪除對應的 `addShape` + `addText` 即可
 - 3 個行動卡片序號建議使用不同顏色（綠/藍/橙）以視覺區分優先序
-- 如行動超過 3 個，改用 Pattern M（Numbered Step List）
+- 如行動超過 3 個，改用 Numbered Step List pattern
 - Hero 框背景色建議與 section accent 同色系的淡色（如 `EEF4FF` 對應 `5097FF`）

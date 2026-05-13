@@ -1,13 +1,12 @@
-# Layout 20 — Pattern O: Theme Cluster Grid (2×3)
+# Pattern — Theme Cluster Grid (2×3)
 
-## When to Use
-主題聚類卡片，以 2 列 × 3 欄的網格呈現「6 個議題分群」、「6 大主題分析」、「跨單位需求分類」。與 Pattern D（Unit Grid）不同之處：每張卡片著重「主題內容 + 計數 badge + 分布說明」，標頭顏色可依分群意義設定。
+**When to use:** Theme cluster cards in a 2-row × 3-column grid for "6 topic clusters", "6 major themes", "cross-unit requirement classification". Unlike the Unit Grid pattern, each card emphasizes "topic content + count badge + distribution notes"; header colour can be set by cluster meaning.
 
 ## Visual Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Section Tag Header (Pattern A)                                   │
+│  Section Tag Header                                               │
 │  標題文字 / Subtitle                                              │
 │                                                                    │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │
@@ -101,4 +100,4 @@ THEMES.forEach(({ x, y, headerColor, title, count, content, dist }) => {
 - `headerColor` 可依主題分群使用不同顏色（同色系表示同類）
 - `count` 建議格式為「N 項」；也可改為「N%」或「N 個」
 - `dist` 行（分布說明）可省略，改為第 2 行說明文字
-- 與 Pattern D（Unit Grid）差異：Pattern D 以「部門」為單位，Pattern O 以「主題/議題」為單位
+- 與 Unit Grid 差異：Unit Grid 以「部門」為單位，Theme Cluster Grid 以「主題/議題」為單位

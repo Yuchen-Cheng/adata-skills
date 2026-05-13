@@ -1,8 +1,6 @@
-# Layout 06 — Pattern A: Section Tag Header
+# Pattern — Section Tag Header
 
-**When to use:** Use this compact header **instead of** the default 55 pt title block when the slide needs extra vertical body space, or when an English category label above the Chinese title improves readability.
-
-Combine with any of Patterns B–F in the body area below.
+**When to use:** Use this compact header **instead of** the default 55 pt title block when the slide needs extra vertical body space, or when an English category label above the Chinese title improves readability. Combine with Stat Cards, Table Layout, Unit Grid, Note Band, or other body patterns below.
 
 ## Visual Structure
 

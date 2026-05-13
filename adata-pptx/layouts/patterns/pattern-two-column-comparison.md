@@ -1,13 +1,12 @@
-# Layout 15 — Pattern J: Two-Column Comparison
+# Pattern — Two-Column Comparison
 
-## When to Use
-左右兩欄對比清單，適合呈現「A 類型 vs B 類型」、「AI 處理 vs 人力專注」、「Track A vs Track B」等二元對比。每欄含彩色標頭 + 多行條目列 + 右側標籤徽章。底部可加結論橫幅。
+**When to use:** Left-right two-column comparison lists for "Type A vs Type B", "AI-powered vs human-focused", "Track A vs Track B". Each column has coloured header + multi-row entries + right-side label badges. Optional conclusion banner at bottom.
 
 ## Visual Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Section Tag Header (Pattern A)                                   │
+│  Section Tag Header                                               │
 │  標題文字 / Subtitle                                              │
 │  [ 情境說明橫幅（背景說明）                                 ]    │
 │                                                                    │

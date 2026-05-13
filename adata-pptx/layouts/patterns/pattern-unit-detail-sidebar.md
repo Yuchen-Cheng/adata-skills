@@ -1,13 +1,12 @@
-# Layout 16 — Pattern K: Unit Detail Sidebar
+# Pattern — Unit Detail Sidebar
 
-## When to Use
-左側欄（Sidebar）+ 右側條列，適合「單一單位深入分析」場景：左側顯示大型總計數字與分類 legend（A/B/C/D），右側顯示最具代表性的項目條目列（含類別徽章 + 任務名稱 + 建議文字）。
+**When to use:** Left sidebar + right-side list for deep-dive analysis on a single unit. Left sidebar shows large total number and classification legend (A/B/C/D); right side shows the most representative items with category badges + task names + recommendation text.
 
 ## Visual Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Section Tag Header (Pattern A)                                   │
+│  Section Tag Header                                               │
 │  標題文字 / Subtitle                                              │
 ├──────────────┬─────────────────────────────────────────────────┤
 │  單位概況    │  重點項目（代表性案例）                           │
@@ -153,4 +152,4 @@ ITEMS.forEach(({ cat, catColor, title, note }, idx) => {
 - 右側條目最多 6 個（`ITEM_H = 0.52`，總高 3.12"）；6 個以上時改 `h: 0.42`
 - `cat` badge 建議使用單個大寫字母（A/B/C/D）
 - Legend 中 `pct` 百分比可省略，僅顯示計數
-- 本 pattern 與 Pattern G（Three-Phase Column）可搭配：使用 Pattern G 呈現整體，再用本 pattern 深入各欄位
+- 本 pattern 與 Three-Phase Column pattern 可搭配：使用 Three-Phase Column 呈現整體，再用本 pattern 深入各欄位

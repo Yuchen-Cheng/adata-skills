@@ -1,13 +1,12 @@
-# Layout 14 — Pattern I: Heatmap Matrix
+# Pattern — Heatmap Matrix
 
-## When to Use
-熱度矩陣，以「列 × 欄」格狀結構呈現多維度交叉分析。適合「各單位 × 各類別的數量分佈」、「跨維度數據比較」。欄標頭以顏色區分類別，列末加合計欄，最底部加類別合計列。
+**When to use:** Heat/density matrix for multi-dimensional cross-tabulation. Rows × columns grid structure. Ideal for "units × categories distribution count", "cross-dimension data comparison". Column headers colour-coded by category; row total column added; category total row at bottom.
 
 ## Visual Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Section Tag Header (Pattern A)                                   │
+│  Section Tag Header                                               │
 │  標題文字 / Subtitle                                              │
 ├──────────┬──────────┬──────────┬──────────┬──────────┬──────────┤
 │ 項目\類別│ ██ 類別A │ ██ 類別B │ ██ 類別C │ ██ 類別D │ ██ 合計  │
@@ -138,4 +137,4 @@ COLS.forEach(({ x, w }, ci) => {
 - `COLS` 最後一欄（合計）用較深色強調，建議與 section accent 一致
 - `LIGHT_FILLS` 各欄請使用對應欄標頭色的淡化版，保持視覺對應
 - 可在儲存格內加入圖示或 emoji 強調極值（最高 / 最低）
-- 搭配 Pattern F（Note Band）在頁底補充數據說明
+- 搭配 Note Band pattern 在頁底補充數據說明

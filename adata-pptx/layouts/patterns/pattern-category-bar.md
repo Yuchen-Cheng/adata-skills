@@ -1,4 +1,4 @@
-# Layout 08 — Pattern C: Proportional Category Bar
+# Pattern — Proportional Category Bar
 
 **When to use:** Visualising the distribution of items across categories as a proportional horizontal bar.
 
@@ -53,4 +53,4 @@ segments.forEach(({ count, label, color }) => {
 ## Notes
 
 - Always replace segment colours with ADATA section accent colours — never use arbitrary greys or layout_example purple (`#6B2FA5`).
-- Combine with Pattern B (stat cards) below the bar for a richer summary view.
+- Combine with the Stat Cards pattern below the bar for a richer summary view.

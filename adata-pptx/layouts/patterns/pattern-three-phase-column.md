@@ -1,13 +1,12 @@
-# Layout 12 — Pattern G: Three-Phase Column
+# Pattern — Three-Phase Column
 
-## When to Use
-三個並排垂直欄位，適合呈現「三階段推進」、「三平台架構」、「三層策略」等需要橫向對比的內容。每欄含：彩色標頭 + 說明副標 + 條列內容 + 底部 tag。欄間以箭頭連結，強調順序性。
+**When to use:** Three vertical columns side-by-side for presenting "three-stage progression", "three-platform architecture", "three-level strategy", or other horizontal comparison content. Each column features: coloured header + descriptive subtitle + bulleted content + bottom tag. Columns are connected by arrows emphasizing sequence.
 
 ## Visual Structure
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Section Tag Header (Pattern A)                                   │
+│  Section Tag Header                                               │
 │  標題文字 / Subtitle                                              │
 ├───────────────┐    ┌───────────────┐    ┌───────────────┐        │
 │ ████ Phase 0  │ ▶  │ ████ Phase 1  │ ▶  │ ████ Phase 2  │        │
@@ -116,5 +115,5 @@ PHASES.forEach(({ x, accent, label, sub, items, tag, tagColor }) => {
 - 三欄等寬 (w=2.7)，總寬 9.0"，間距由箭頭連結
 - `items` 建議 3–4 條；超過 4 條時縮小字體至 10pt
 - 若無順序性（非流程）可省略箭頭，三欄獨立呈現
-- 底部 tag 可省略，改為頁底 Pattern F note band
+- 底部 tag 可省略，改為頁底 Note Band pattern
 - 欲強調「平行」而非「順序」時，三欄可使用相同顏色

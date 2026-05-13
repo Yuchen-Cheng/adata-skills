@@ -1,4 +1,4 @@
-# Layout 11 — Pattern F: Bottom Note Band
+# Pattern — Bottom Note Band
 
 **When to use:** Update notes, caveats, risk callouts, or any secondary information that should appear at the bottom of a content slide without overlapping the main body.
 
