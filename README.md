@@ -14,10 +14,10 @@ Install a specific skill with the [Skills CLI](https://skills.sh/):
 
 ```bash
 # Install a single skill
-npx skills add Yuchen-Cheng/adata-skills@adata-pptx
+npx skills add Yuchen-Cheng/adata-skills -skill adata-pptx
 
 # Install globally (user-level)
-npx skills add Yuchen-Cheng/adata-skills@adata-pptx -g
+npx skills add Yuchen-Cheng/adata-skills -skill adata-pptx -g
 
 # List all available skills in this repo
 npx skills add Yuchen-Cheng/adata-skills --list
