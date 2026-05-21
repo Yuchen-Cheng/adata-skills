@@ -1,6 +1,7 @@
 ﻿---
 name: adata-pptx
-description: Create branded PowerPoint presentations from a selectable template library with reusable content patterns. ADATA template built-in; extensible architecture to add custom templates and patterns. Use this skill whenever the user wants to make a presentation, slides, or deck — or asks to generate a .pptx file. Always use this skill for any presentation request, even if the user just says 'make a deck' or 'make slides'. See references/Add_template.md and references/Add_pattern.md to extend with new templates or patterns.
+description: >
+  Create branded PowerPoint presentations from a selectable template library with reusable content patterns. ADATA template built-in; extensible architecture to add custom templates and patterns. Use this skill whenever the user wants to make a presentation, slides, or deck — or asks to generate a .pptx file. Always use this skill for any presentation request, even if the user just says 'make a deck' or 'make slides'. See references/Add_template.md and references/Add_pattern.md to extend with new templates or patterns.
 ---
 
 # Universal Presentation Skill
